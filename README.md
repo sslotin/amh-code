@@ -1,6 +1,6 @@
-# HPC Course Materials at Tinkoff Generation
+# HPC at Tinkoff Generation
 
-This repository will be gradually populated with exercises and other materials from High Performance Computing mini-course at Tinkoff Generation. The lectures themselves are in Russian, but for availability purposes most of the materials will be in English.
+This repository will be gradually populated with exercises and other materials from High Performance Computing lecture series at Tinkoff Generation. The lectures themselves are in Russian, but for availability purposes most of the materials will be in English.
 
 Since most of the problems require some very specific environment set-up (multi-core, GPU, Dask clusters, etc.), there is no hosted testing system; the evaluation is meant to be done locally with [Jay](https://github.com/sslotin/jay).
 
@@ -12,6 +12,12 @@ Since most of the problems require some very specific environment set-up (multi-
 * Расписание не строгое — возможно, будут переносы и «бонусные» лекции
 * Общение в телеграме и, во время транслаций, ютюбовском чате (альтернативно можно зайти на дискорд-сервер и задавать вопросы голосом) 
 * Отбора, оценок, зачетов, сертификатов и подобного не будет — курс открытый
+
+Пререквизиты (рекомендация):
+
+* Алгоритмы уровня ≥B в олимпиадных школах / 1-2 курсов в вузах на сильных факультетах
+* Архитектура компьютера
+* C++, Python, русский и английский
 
 Примерная программа:
 
