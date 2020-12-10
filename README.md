@@ -1,4 +1,4 @@
-# tinkoff-hpc
+# HPC Course Materials at Tinkoff Generation
 
 This repository will be gradually populated with exercises and other materials from High Performance Computing mini-course at Tinkoff Generation. The lectures themselves are in Russian, but for availability purposes most of the materials will be in English.
 
