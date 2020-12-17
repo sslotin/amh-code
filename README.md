@@ -6,6 +6,20 @@ Since most of the problems require some very specific environment set-up (multi-
 
 ---
 
+Schedule:
+
+1. **Memory-bound algorithms** (Dec 11, [slides](https://hackmd.io/@BFuTCPqJS16n8Njn0LhJ_Q/r1oWtsgnw), [video](https://www.youtube.com/watch?v=Dt1BSlKHp5Q&feature=youtu.be&ab_channel=Algocode)): cache hierarchy, cache-aware algorithms
+2. **Instruction-Level Parallelism** (Dec 18): pipelining, branch prediction, bandwidth-latency
+3. **Data Parallelism** (Dec 25): SIMD, SSE, AVX
+4. **Concurrency**: threads, processes, greenlets, syncronization, mutexes
+5. **Parallelism**: thread pools, OpenMP, non-blocking algorithms
+6. **GPU Programming**: GPGPU, CUDA, kernels, barriers, scan, gather
+7. **Massively Parallel Algorithms**: sorting, graph algorithms, hash table
+8. **MapReduce**: Hadoop, Dask, partition, shuffle
+9. **Cloud Computing**: job scheduling, data partitioning, preemptibility
+
+---
+
 Оргинформация:
 
 * Спецкурс будет проходить по пятницам в 19:00, начиная с 11 декабря
@@ -18,18 +32,6 @@ Since most of the problems require some very specific environment set-up (multi-
 * Алгоритмы уровня ≥B в олимпиадных школах / 1-2 курсов в вузах на сильных факультетах
 * Желательно: архитектура компьютера, знание Linux
 * C++, Python, русский и английский
-
-Примерная программа:
-
-1. Memory-Bound Algorithms
-2. Instruction-Level Parallelism
-3. Single Instruction, Multiple Data
-4. Concurrency
-5. Parallelism
-6. GPU Programming
-7. Massively Parallel Algorithms
-8. MapReduce
-9. Cloud Computing
 
 Ссылки:
 
