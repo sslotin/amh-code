@@ -133,6 +133,13 @@ int scalar_parse(int &s) {
 }
 
 /*
+void timeit(void (*f)()) {
+    clock_t start = clock();
+    f();
+    cout << double(clock() - start) / CLOCKS_PER_SEC << endl;
+}*/
+
+/*
 // input: 4x8 vector containing ASCII encoded digits
 // output: 4-integer vector
 __m128i convert(__m256i ascii) {

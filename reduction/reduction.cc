@@ -17,7 +17,6 @@ int stl_sum() {
     return accumulate(a, a + N, 0);
 }
 
-
 int stl_reduce() {
     return reduce(a, a + N, 0);
 }
@@ -39,6 +38,7 @@ int ilp_autovec_sum() {
     return s;
 }
 
+/*
 int ilp_sum() {
     reg b[B] = { _mm256_setzero_si256() };
 
@@ -58,7 +58,7 @@ int ilp_sum() {
         s += _mm256_extract_epi32(b[0], i);
 
     return s;
-}
+}*/
 
 typedef int vec __attribute__ (( vector_size(32) ));
 
@@ -81,6 +81,24 @@ int ilp_sum_v2() {
     return s;
 }
 
+const int k = 4;
+typedef int vec2 __attribute__ (( vector_size(k * 16) ));
+
+int ilp_sum_v3() {
+    vec2 s;
+    vec2* v = (vec2*) a;
+
+    for (int i = 0; i < N / (k * 4); i++)
+        s += v[i];
+    
+    int res = 0;
+
+    for (int i = 0; i < (k * 4); i++)
+        res += s[i];
+
+    return res;
+}
+
 int dummy() {
     memcpy(a, a, 4 * N);
     return -1;
@@ -89,7 +107,7 @@ int dummy() {
 void timeit(int (*f)()) {
     clock_t start = clock();
     volatile int checksum = 0;
-    const int cnt = 5e6;
+    const int cnt = 1e6;
 
     for (int i = 0; i < cnt; i++) {
         checksum = f();
@@ -117,6 +135,7 @@ int main() {
     //timeit(ilp_sum);
     //timeit(ilp_sum_v2);
     timeit(ilp_sum_v2);
+    //timeit(ilp_sum_v3);
     //timeit(dummy);
 
     return 0;

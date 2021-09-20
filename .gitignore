@@ -1,0 +1,11 @@
+# this should ignore all binary files
+*
+!/**/
+!*.*
+!Makefile
+*.gcda
+*.in
+*.data
+*.run
+*.s
+*.old
