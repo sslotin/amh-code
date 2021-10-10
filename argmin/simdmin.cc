@@ -4,12 +4,6 @@
 const int B = 8;
 typedef int vec __attribute__ (( vector_size(4 * B) ));
 
-void print(vec x) {
-    for (int i = 0; i < B; i++)
-        std::cout << x[i] << " ";
-    std::cout << std::endl;
-}
-
 vec min(vec x, vec y) {
     return (x < y ? x : y);
 }
