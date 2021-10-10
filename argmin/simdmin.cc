@@ -26,15 +26,7 @@ int argmin() {
         t1 = min(t1, v[i + 1]);
         vec t = min(t0, t1);
         int mask = _mm256_movemask_epi8((__m256i) (p == t));
-        //std::cout << std::bitset<32>(mask) << std::endl;
-        if (mask != -1) [[unlikely]] {
-            /*
-            print(t0);
-            print(t1);
-            print(t);
-            print(p);
-            */
-            //std::cout << i << " " << m << " " << k << std::endl;
+        if (mask != -1) { [[unlikely]]
             for (int j = B * i; j < B * i + 2 * B; j++)
                 if (a[j] < m)
                     m = a[k = j];
