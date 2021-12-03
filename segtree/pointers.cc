@@ -33,7 +33,7 @@ struct segtree {
     }
 };
 
-segtree root(0, n);
+segtree root(0, N);
 
 void add(int k, int x) {
     root.add(k, x);

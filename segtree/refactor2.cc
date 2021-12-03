@@ -15,7 +15,7 @@ constexpr int height(int m) {
 
 constexpr int offset(int h) {
     int res = 0;
-    int m = n;
+    int m = N;
     while (h--) {
         res += round(m) + B;
         m /= B;
@@ -23,7 +23,7 @@ constexpr int offset(int h) {
     return res;
 }
 
-constexpr int h = height(n);
+constexpr int h = height(N);
 alignas(64) int t[offset(h)];
 //int t[N * B / (B - 1)]; // +1?
 
