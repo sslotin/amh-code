@@ -1,9 +1,9 @@
 #include "prefix.hh"
 
-int t[n];
+int t[N];
 
 void add(int k, int x) {
-    for (; k < n; k = (k | (k+1)))
+    for (; k < N; k = (k | (k+1)))
         t[k] += x;
 }
 
@@ -13,4 +13,3 @@ int sum(int k) {
         res += t[k];
     return res;
 }
-

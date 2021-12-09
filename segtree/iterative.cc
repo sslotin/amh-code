@@ -1,9 +1,9 @@
 #include "prefix.hh"
 
-int t[2 * n];
+int t[2 * N];
 
 void add(int k, int x) {
-    k += n;
+    k += N;
     t[k] += x;
     while (k > 1) {
         t[k>>1] += x;
@@ -13,7 +13,7 @@ void add(int k, int x) {
 
 int sum(int k) {
     int res = 0;
-    k += n;
+    k += N;
     while (k != 0) {
         if (!(k&1))
             res += t[k--]; // k = 1?

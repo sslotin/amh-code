@@ -1,9 +1,9 @@
 #include "prefix.hh"
 
-int t[4 * n];
+int t[4 * N];
 
 void add(int k, int x) {
-    int v = 1, l = 0, r = n;
+    int v = 1, l = 0, r = N;
     while (l + 1 < r) {
         t[v] += x;
         int m = (l + r) / 2;
@@ -16,7 +16,7 @@ void add(int k, int x) {
 }
 
 int sum(int k) {
-    if (k == n - 1)
+    if (k == N - 1)
         return t[1];
     int v = 1, l = 0, r = n;
     int s = 0;

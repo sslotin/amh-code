@@ -5,8 +5,7 @@ struct segtree {
     int s = 0;
     segtree *l = 0, *r = 0;
 
-    segtree(int _lb, int _rb) {
-        lb = _lb, rb = _rb;
+    segtree(int lb, int rb) : lb(lb), rb(rb) {
         if (lb + 1 < rb) {
             int t = (lb + rb) / 2;
             l = new segtree(lb, t);
