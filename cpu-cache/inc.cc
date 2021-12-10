@@ -9,7 +9,7 @@
 #define D 1
 #endif
 
-const int K = 5e9 / N;
+const int K = 1e10 / N;
 
 int a[N];
 
