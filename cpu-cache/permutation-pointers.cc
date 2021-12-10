@@ -1,24 +1,28 @@
-#include <bits/stdc++.h>
+#include "stdio.h"
+#include <algorithm>
+#include <numeric>
 using namespace std;
 
 #ifndef N
 #define N (1<<20)
 #endif
 
-int p[N], q[N];
+int p[N];
 
-const int K = (1<<25) / N;
+const int K = 2e7 / N;
+
+struct node { node* ptr; };
+
+node q[N];
 
 int main() {
     iota(p, p + N, 0);
     random_shuffle(p, p + N);
 
-    int k = p[N - 1];
+    node* k = q + p[N - 1];
 
-    for (int i = 0; i < N; i++) {
-        q[k] = p[i];
-        k = p[i];
-    }
+    for (int i = 0; i < N; i++)
+        k = k->ptr = q + p[i];
 
     clock_t start = clock();
 
@@ -26,11 +30,9 @@ int main() {
 
     for (int t = 0; t < K; t++) {
         for (int i = 0; i < N; i++) {
-            //__builtin_prefetch(&a[i + 10 * D]);
-            k = q[k];
-            //cerr << k << endl;
+            k = k->ptr;
         }
-        s ^= k;
+        s ^= (long long) k->ptr;
     }
 
     float duration = float(clock() - start) / CLOCKS_PER_SEC;

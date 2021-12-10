@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <sys/mman.h>
 
 #ifndef N
 #define N (1<<20)
@@ -14,7 +15,10 @@ const int M = D * N;
 
 int a[M];
 
+
 int main() {
+    madvise(a, sizeof a, MADV_HUGEPAGE);
+
     clock_t start = clock();
 
     for (int t = 0; t < K; t++) {

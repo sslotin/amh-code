@@ -5,9 +5,13 @@ using namespace std;
 #define N (1<<20)
 #endif
 
-int p[N], q[N];
+int p[N];
 
-const int K = (1<<25) / N;
+const int K = 2e7 / N;
+
+struct node { int idx : 24; } __attribute__ ((packed));
+
+node q[N];
 
 int main() {
     iota(p, p + N, 0);
@@ -16,8 +20,7 @@ int main() {
     int k = p[N - 1];
 
     for (int i = 0; i < N; i++) {
-        q[k] = p[i];
-        k = p[i];
+        k = q[k].idx = p[i];
     }
 
     clock_t start = clock();
@@ -27,7 +30,7 @@ int main() {
     for (int t = 0; t < K; t++) {
         for (int i = 0; i < N; i++) {
             //__builtin_prefetch(&a[i + 10 * D]);
-            k = q[k];
+            k = q[k].idx;
             //cerr << k << endl;
         }
         s ^= k;
@@ -35,6 +38,8 @@ int main() {
 
     float duration = float(clock() - start) / CLOCKS_PER_SEC;
     printf("%.2f ns\n", 1e9 * duration / (N * K));
+
+    printf("%ld\n", sizeof q);
 
     return 0;
 }
