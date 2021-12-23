@@ -5,21 +5,25 @@ using namespace std;
 #define N (1<<20)
 #endif
 
-int p[15], q[N];
+#ifndef D
+#define D 16
+#endif
+
+int p[D - 1], q[N];
 
 const int K = 2e7 / N;
 
 int main() {
-    iota(p, p + 15, 1);
+    iota(p, p + D - 1, 1);
 
-    for (int i = 0; i + 16 < N; i += 16) {
-        random_shuffle(p, p + 15);
+    for (int i = 0; i + D < N; i += D) {
+        random_shuffle(p, p + D - 1);
         int k = i;
-        for (int j = 0; j < 15; j++) {
+        for (int j = 0; j < D - 1; j++) {
             q[k] = i + p[j];
             k = i + p[j];
         }
-        q[k] = i + 16;
+        q[k] = i + D;
     }
 
     /*
@@ -39,7 +43,7 @@ int main() {
         for (int i = 0; i < N; i++) {
             //__builtin_prefetch(&a[i + 10 * D]);
             k = q[k];
-            //cerr << k << endl;
+            cerr << k << endl;
         }
         s ^= k;
     }

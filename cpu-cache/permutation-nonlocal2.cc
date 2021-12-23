@@ -5,19 +5,33 @@ using namespace std;
 #define N (1<<20)
 #endif
 
-int p[N], q[N];
+#ifndef D
+#define D 16
+#endif
 
-const int K = (1<<25) / N;
+static_assert(D >= 16 && D % 16 == 0);
+
+const int M = N / D;
+const int K = (1<<24) / N;
+const int T = D / 16;
+
+int p[M], q[N], t[T];
 
 int main() {
-    iota(p, p + N, 0);
-    random_shuffle(p, p + N);
+    iota(p, p + M, 0);
+    random_shuffle(p, p + M);
 
-    int k = p[N - 1];
+    iota(t, t + T, 0);
 
-    for (int i = 0; i < N; i++) {
-        q[k] = p[i];
-        k = p[i];
+    int k = p[M - 1];
+
+    for (int l = 0; l < 16; l++) {
+        random_shuffle(t, t + T);
+        for (int i = 0; i < T; i++) {
+            for (int j = 0; j < M; j++) {
+                k = q[k] = D * p[j] + 16 * t[i] + l;
+            }
+        }
     }
 
     clock_t start = clock();

@@ -9,7 +9,7 @@ int p[N];
 
 const int K = 2e7 / N;
 
-struct node { int idx : 24; } __attribute__ ((packed));
+struct __attribute__ ((packed)) node { int idx : 24; };
 
 node q[N + 1];
 

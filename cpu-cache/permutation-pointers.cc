@@ -9,7 +9,7 @@ using namespace std;
 
 int p[N];
 
-const int K = 2e7 / N;
+const int K = 1e8 / N;
 
 struct node { node* ptr; };
 
@@ -29,6 +29,7 @@ int main() {
     volatile int s = 0;
 
     for (int t = 0; t < K; t++) {
+        #pragma GCC unroll 8
         for (int i = 0; i < N; i++) {
             k = k->ptr;
         }
