@@ -12,9 +12,7 @@ using namespace std;
 const int M = N / D; // # of memory accesses
 const int K = (1<<26) / M;
 
-int p[M];
-int q[M][D];
-
+int p[M], q[M][D];
 
 int main() {
     iota(p, p + M, 0);

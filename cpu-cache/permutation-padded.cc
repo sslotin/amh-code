@@ -18,7 +18,7 @@ struct padded_int {
 };
 
 int p[M];
-padded_int q[M][D];
+alignas(64) padded_int q[M][D];
 static_assert(sizeof(q) == M * D * 64);
 
 int main() {
