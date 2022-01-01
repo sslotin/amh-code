@@ -52,7 +52,7 @@ void prepare(int *a, int _n) {
     build();
 }
 
-int rank(reg x_vec, int* y_ptr) {
+unsigned rank(reg x_vec, int* y_ptr) {
     reg a = _mm256_load_si256((reg*) y_ptr);
     reg b = _mm256_load_si256((reg*) (y_ptr + 8));
 
@@ -62,7 +62,7 @@ int rank(reg x_vec, int* y_ptr) {
     reg c = _mm256_packs_epi32(ca, cb);
     int mask = _mm256_movemask_epi8(c);
 
-    return _tzcnt_u32(mask) >> 1;    
+    return __tzcnt_u32(mask) >> 1;    
 }
 
 const int translate[17] = {
@@ -73,7 +73,7 @@ const int translate[17] = {
     0
 };
 
-void update(int &res, int* node, int i) {
+void update(int &res, int* node, unsigned i) {
     int val = node[translate[i]];
     res = (i < B ? val : res);
 }
@@ -82,19 +82,21 @@ int lower_bound(int x) {
     int k = 0, res = INF;
     reg x_vec = _mm256_set1_epi32(x - 1);
     for (int h = 0; h < height - 1; h++) {
-        int i = rank(x_vec, btree[k]);
+        int *node = btree[k];
+        unsigned i = rank(x_vec, node);
+        k = k * (B + 1) + 1; // remove + 1?
         if (h > 3)
             __builtin_prefetch(&btree[go(k, 0)]);
-        update(res, btree[k], i);
-        k = go(k, i);
+        update(res, node, i);
+        k += i;
     }
-    int i = rank(x_vec, btree[k]);
+    unsigned i = rank(x_vec, btree[k]);
     update(res, btree[k], i);
     int k2 = go(k, i);
     if (height > 4)
         __builtin_prefetch(&btree[go(k, 0)]);
     if (go(k, 0) < nblocks) {
-        int i = rank(x_vec, btree[k2]);
+        unsigned i = rank(x_vec, btree[k2]);
         update(res, btree[k2], i);
     }
     return res;
