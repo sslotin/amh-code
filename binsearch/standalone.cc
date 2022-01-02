@@ -1,10 +1,15 @@
+#pragma GCC optimize("O3")
+#pragma GCC target("avx2,bmi")
+
 #include <bits/stdc++.h>
 #include <x86intrin.h>
-#include <sys/mman.h>
+#include "memoryapi.h"
+//#include <sys/mman.h>
+
 
 typedef __m256i reg;
 
-const int N = (1<<16), Q = (1<<20);
+const int N = (1<<19), Q = (1<<20);
 
 const int B = 16, INF = std::numeric_limits<int>::max();
 
@@ -41,10 +46,11 @@ void permute(int *node) {
     _mm256_storeu_si256(middle, x);
 }
 
-void prepare(int *a, int n) {
+void prepare(int *a) {
     const int P = 1 << 21, T = (4 * S + P - 1) / P * P;
-    btree = (int*) std::aligned_alloc(P, T);
-    madvise(btree, T, MADV_HUGEPAGE);
+    //btree = (int*) std::aligned_alloc(P, T);
+    //madvise(btree, T, MADV_HUGEPAGE);
+    btree = (int*) VirtualAlloc(NULL, T, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     for (int i = N; i < S; i++)
         btree[i] = INF;
@@ -113,7 +119,7 @@ int baseline(int x) {
     return *std::lower_bound(a, a + N, x);
 }
 
-float timeit(int (*f)(int)) {
+double timeit(int (*f)(int)) {
     clock_t start = clock();
     
     int checksum = 0;
@@ -121,7 +127,7 @@ float timeit(int (*f)(int)) {
     for (int i = 0; i < Q; i++)
         checksum ^= f(q[i]);
 
-    float seconds = float(clock() - start) / CLOCKS_PER_SEC;
+    double seconds = double(clock() - start) / CLOCKS_PER_SEC;
     printf("Checksum: %d\n", checksum);
     
     return 1e9 * seconds / Q;
@@ -139,10 +145,10 @@ int main() {
     
     a[0] = INF;
     std::sort(a, a + N);
-    prepare(a, N);
+    prepare(a);
 
-    float x = timeit(baseline);
-    float y = timeit(lower_bound);
+    double x = timeit(baseline);
+    double y = timeit(lower_bound);
 
     printf("std::lower_bound: %.2f\n", x);
     printf("S-tree: %.2f\n", y);
