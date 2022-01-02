@@ -100,10 +100,17 @@ int lower_bound(int _x) {
     reg x = _mm256_set1_epi32(_x - 1);
     for (int h = H - 1; h > 0; h--) {
         unsigned i = permuted_rank(x, btree + offset(h) + k);
-        k /= B;
-        k *= (B + 1) * B;
-        k += (i << 3);
-        // prefetch?
+        
+        //k /= B;
+        //k *= (B + 1) * B;
+        // k += (i << 3);
+        
+        k = k * (B + 1) + (i << 3);
+        
+        //if (N > (1 << 21) && h == 1)
+        //    __builtin_prefetch(btree + k);
+        
+        //k += (i << 3);
     }
     unsigned i = direct_rank(x, btree + k);
     return btree[k + i];
