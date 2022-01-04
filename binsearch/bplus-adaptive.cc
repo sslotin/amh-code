@@ -4,71 +4,53 @@
 
 typedef __m256i reg;
 
-const int INF = std::numeric_limits<int>::max();
+const int INF = std::numeric_limits<int>::max(); // type-specific
 
-class Layer {
-    int size;
-    bool permuted;
-    bool prefetch;
-};
+template <int b, bool p>
+unsigned rank(reg x, int *node);
 
-// factory class?
-
-template<int b, bool p>
-unsigned rank(reg x, int* node) {
-    // ...
+template <int b>
+unsigned rank(reg x, int *node) {
+    int scalar = _mm256_extract_epi32(x, 0); // <- may be inefficient
+    for (int i = 0; i < b; i++)
+        if (node[i] > scalar)
+            return i;
+    return b;
 }
 
-template<>
-unsigned rank<8, false>(reg x, int* node) {
-    // ...
+unsigned cmp(reg x, int *node) {
+    reg y = _mm256_load_si256((reg*) node);
+    reg mask = _mm256_cmpgt_epi32(y, x);
+    return _mm256_movemask_ps((__m256) mask);
 }
 
-template<>
-unsigned rank<16, false>(reg x, int* node) {
-    reg a = _mm256_load_si256((reg*) node);
-    reg b = _mm256_load_si256((reg*) (node + 8));
-
-    reg ca = _mm256_cmpgt_epi32(a, x);
-    reg cb = _mm256_cmpgt_epi32(b, x);
-
-    int mb = _mm256_movemask_ps((__m256) cb);
-    int ma = _mm256_movemask_ps((__m256) ca);
-    
-    unsigned mask = (1 << 16);
-    mask |= mb << 8;
-    mask |= ma;
-
+template <>
+unsigned rank<8>(reg x, int *node) {
+    unsigned mask = (1 << 8) | cmp(x, node);
     return __tzcnt_u32(mask);
 }
 
-template<>
-unsigned rank<32, false>(reg x, int* node) {
-    /*
-    reg a = _mm256_load_si256((reg*) node);
-    reg b = _mm256_load_si256((reg*) (node + 8));
-
-    reg ca = _mm256_cmpgt_epi32(a, x);
-    reg cb = _mm256_cmpgt_epi32(b, x);
-
-    int mb = _mm256_movemask_ps((__m256) cb);
-    int ma = _mm256_movemask_ps((__m256) ca);
-    
-    unsigned mask = (1 << 16);
-    mask |= mb << 8;
-    mask |= ma;
-
+template <>
+unsigned rank<16>(reg x, int *node) {
+    unsigned mask = (1 << 16) | (cmp(x, node + 8) << 8) | cmp(x, node);
     return __tzcnt_u32(mask);
-    */
 }
 
-template<int b>
-void permute(int *node) {
-    // ...
+template <>
+unsigned rank<32>(reg x, int *node) {
+    unsigned mask = cmp(x, node)
+                  | (cmp(x, node + 8) << 8)
+                  | (cmp(x, node + 16) << 16)
+                  | (cmp(x, node + 24) << 24);
+    return __tzcnt_u32(mask);    
 }
 
-template<>
+template <int b>
+void permute(int *node);
+
+template <>
 void permute<16>(int *node) {
+    // a b c d -> a c b d
     const reg perm_mask = _mm256_set_epi32(3, 2, 1, 0, 7, 6, 5, 4);
     reg* middle = (reg*) (node + 4);
     reg x = _mm256_loadu_si256(middle);
@@ -76,13 +58,22 @@ void permute<16>(int *node) {
     _mm256_storeu_si256(middle, x);
 }
 
-template<>
+template <>
 void permute<32>(int *node) {
-    // ...
+    // a b c d 1 2 3 4 -> (a c) (b d) (1 3) (2 4) -> (a c) (1 3) (b d) (2 4)
+    permute<16>(node);
+    permute<16>(node + 16);
+    reg x = _mm256_load_si256((reg*) (node + 8));
+    reg y = _mm256_load_si256((reg*) (node + 16));
+    _mm256_storeu_si256((reg*) (node + 8), y);
+    _mm256_storeu_si256((reg*) (node + 16), x);
 }
 
-template<>
-void rank<16, true>(reg x, int* node) {
+template <int b>
+unsigned permuted_rank(reg x, int *node);
+
+template <>
+unsigned permuted_rank<16>(reg x, int *node) {
     reg a = _mm256_load_si256((reg*) node);
     reg b = _mm256_load_si256((reg*) (node + 8));
 
@@ -92,62 +83,98 @@ void rank<16, true>(reg x, int* node) {
     reg c = _mm256_packs_epi32(ca, cb);
     unsigned mask = _mm256_movemask_epi8(c);
 
-    return __tzcnt_u32(mask)/* >> 1*/;
+    return __tzcnt_u32(mask) >> 1; // handle shifts?
 }
 
 template<>
-void rank<32, true>(reg x, int *node) {
-    // ...
+unsigned permuted_rank<32>(reg x, int *node) {
+    reg a = _mm256_load_si256((reg*) node);
+    reg b = _mm256_load_si256((reg*) (node + 8));
+    reg c = _mm256_load_si256((reg*) (node + 16));
+    reg d = _mm256_load_si256((reg*) (node + 24));
+
+    reg ca = _mm256_cmpgt_epi32(a, x);
+    reg cb = _mm256_cmpgt_epi32(b, x);
+    reg cc = _mm256_cmpgt_epi32(c, x);
+    reg cd = _mm256_cmpgt_epi32(d, x);
+
+    reg cab = _mm256_packs_epi32(ca, cb);
+    reg ccd = _mm256_packs_epi32(cc, cd);
+    reg cabcd = _mm256_packs_epi16(cab, ccd);
+    unsigned mask = _mm256_movemask_epi8(cabcd);
+
+    return __tzcnt_u32(mask) >> 1;
 }
+
+// when C++ compilers start supporting this:
+constexpr class Layer {
+    int size;      // size of blocks on cache layer
+    bool permuted; // whether the blocks there are permuted (3-4 cycles faster)
+    bool prefetch; // prefetch the first possible child of the next layer
+                   //  (not necessarily belonging to the cache line we are going to read)
+    
+    constexpr Layer() : ??? {
+        ???
+    }
+};
 
 template<int... block_sizes>
 struct STree {
+    // todo: some compile-time computation of optimal sizes
+
     static constexpr int H = sizeof...(block_sizes); // structure height
     static constexpr int B[H] = {block_sizes...};    // block sizes at each level
     
+    // number of full blocks in a layer
     constexpr int blocks(int n, int b) {
         return (n + b - 1) / b;
     }
     
+    // number of keys on the previous layer
+    // n: number of blocks on the current layer
+    // b: block size on previous layer
     constexpr int prev_keys(int n, int b) {
-        return (blocks(n) + b) / (b + 1) * b;
+        // get the number of blocks (considering that each block is responsible
+        // for (b + 1) elements and not b), and then calculate the block size
+        return (n + b) / (b + 1) * b;
     }
 
+    // the maximum supposed dataset size
+    // currently used just for compile-time checking
     constexpr int capacity() {
-        // todo: fix me and fold me
+        // maybe this could be folded with std::accumulate
         int cnt = B[0];
-        
         for (int i = 1; i < H; i++)
             cnt *= (B[i] + 1);
-
         return cnt;
     }
 
-    static_assert(capacity() >= N);
-
+    // offset in the memory array for the layer "h" (0th is the array itself)
     constexpr int offset(int h) {
-        // todo: validate
-        // todo: small blocks
         int k = 0, n = N;
-        while (h--) {
-            k += blocks(n) * B;
-            n = prev_keys(n);
+        for (int l = h; l >= 0; l--) {
+            int m = blocks(n, B[l]);
+            k += ((m * B[l]) + 15) / 16 * 16; // ceiled to cache-align the next layer
+            if (l > 0)
+                n = prev_keys(m, B[l - 1]);
         }
         return k;
     }
 
     int *t;
 
+    STree() {}
+
     STree(int *a/*, int n*/) {
-        const int S = offset(H);               // non-empty memory
+        const int S = offset(H),               // non-empty memory
                   P = 1 << 21,                 // page size
                   M = (4 * S + P - 1) / P * P; // how much memory you actually need
         
         // todo: fallback for non-Linux systems
         t = (int*) std::aligned_alloc(P, M);
-        madvise(btree, M, MADV_HUGEPAGE);
+        madvise(t, M, MADV_HUGEPAGE);
 
-        // todo: smarter fill
+        // todo: more efficient fill
         for (int i = N; i < S; i++)
             t[i] = INF;
 
@@ -159,63 +186,50 @@ struct STree {
                     j = i - k * B[h];
                 k = k * (B[h] + 1) + j + 1; // compare right
                 // and then always to the left
-                for (int l = 0; l < h - 1; l++) // why (h - 1)?
+                for (int l = 1; l < h; l++)
                     k *= (B[l] + 1);
-                btree[offset(h) + i] = (k * B[h] < N ? btree[k * B] : INF);
+                k *= B[0];
+                t[offset(h) + i] = (k < N ? t[k] : INF);
             }
         }
 
-        for (int h = 1; h < H; h++) {
-            permute(btree + i);
-        }
+        for (int h = 1; h < H; h++)
+            for (int i = offset(h); i < offset(h + 1); i += B[h])
+                if (B[h] >= 16)
+                    permute<B[h]>(t + i);
     }
 
-    int lower_bound(int _x) {
+    // we need lower_bound, but upper bound is just easier to implement
+    int upper_bound(int _x) {
         unsigned k = 0;
-        reg x = _mm256_set1_epi32(_x - 1);
+        reg x = _mm256_set1_epi32(_x);
         for (int h = H - 1; h > 0; h--) {
-            unsigned i = permuted_rank(x, btree + offset(h) + k);
-            
-            //k /= B;
-            //k *= (B + 1) * B;
-            // k += (i << 3);
-            
-            k = k * (B + 1) + (i << 3);
-            
+            unsigned i;
+            if (B[h] >= 16)
+                i = permuted_rank<B[h]>(x, t + offset(h) + k);
+            else
+                i = rank<B[h]>(x, t + offset[h] + k);
+            // compiler may need help with optimizing shifts here
+            k = k * (B[h] + 1) + i * B[h - 1];
             //if (N > (1 << 21) && h == 1)
-            //    __builtin_prefetch(btree + k);
-            
-            //k += (i << 3);
+            //    __builtin_prefetch(t + k);
         }
-        unsigned i = direct_rank(x, btree + k);
-        return btree[k + i];
+        unsigned i = rank<B[0], false>(x, t + k);
+        return t[k + i]; // return index or a pair?
     }
 };
 
-STree<16, 16> t;
+typedef STree<16, 16> Tree;
+Tree t;
+
+static_assert(t.capacity() >= N);
+// todo: perhaps lower bound too?
 
 void prepare(int *a, int n) {
     assert(n == N);
-    t = STree<16, 16>(a);
+    t = Tree(a);
 }
 
-int lower_bound(int _x) {
-    unsigned k = 0;
-    reg x = _mm256_set1_epi32(_x - 1);
-    for (int h = H - 1; h > 0; h--) {
-        unsigned i = permuted_rank(x, btree + offset(h) + k);
-        
-        //k /= B;
-        //k *= (B + 1) * B;
-        // k += (i << 3);
-        
-        k = k * (B + 1) + (i << 3);
-        
-        //if (N > (1 << 21) && h == 1)
-        //    __builtin_prefetch(btree + k);
-        
-        //k += (i << 3);
-    }
-    unsigned i = direct_rank(x, btree + k);
-    return btree[k + i];
+int lower_bound(int x) {
+    return t.upper_bound(x - 1);
 }
