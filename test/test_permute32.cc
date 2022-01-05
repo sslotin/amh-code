@@ -41,6 +41,20 @@ unsigned permuted_rank32(reg x, int *node) {
     return __tzcnt_u32(mask);
 }
 
+unsigned cmp(reg x, int *node) {
+    reg y = _mm256_load_si256((reg*) node);
+    reg mask = _mm256_cmpgt_epi32(y, x);
+    return _mm256_movemask_ps((__m256) mask);
+}
+
+unsigned rank32(reg x, int *node) {
+    unsigned mask = cmp(x, node)
+                  | (cmp(x, node + 8) << 8)
+                  | (cmp(x, node + 16) << 16)
+                  | (cmp(x, node + 24) << 24);
+    return __tzcnt_u32(mask);    
+}
+
 using namespace std;
 
 alignas(64) int t[32];
@@ -48,6 +62,14 @@ alignas(64) int t[32];
 int main() {
     for (int i = 0; i < 32; i++)
         t[i] = i;
+
+    for (int i = 0; i < 32; i++) {
+        if (i % 4 == 0)
+            printf(" ");
+        reg x = _mm256_set1_epi32(i);
+        printf("%02d ", rank32(x, t));
+    }
+    printf("\n");
 
     permute32(t);
 
