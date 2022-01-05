@@ -6,9 +6,7 @@ typedef __m256i reg;
 
 const int INF = std::numeric_limits<int>::max(); // type-specific
 
-template <int b, bool p>
-unsigned rank(reg x, int *node);
-
+/*
 template <int b>
 unsigned rank(reg x, int *node) {
     int scalar = _mm256_extract_epi32(x, 0); // <- may be inefficient
@@ -17,6 +15,7 @@ unsigned rank(reg x, int *node) {
             return i;
     return b;
 }
+*/
 
 unsigned cmp(reg x, int *node) {
     reg y = _mm256_load_si256((reg*) node);
@@ -24,20 +23,17 @@ unsigned cmp(reg x, int *node) {
     return _mm256_movemask_ps((__m256) mask);
 }
 
-template <>
-unsigned rank<8>(reg x, int *node) {
+unsigned rank8(reg x, int *node) {
     unsigned mask = (1 << 8) | cmp(x, node);
     return __tzcnt_u32(mask);
 }
 
-template <>
-unsigned rank<16>(reg x, int *node) {
+unsigned rank16(reg x, int *node) {
     unsigned mask = (1 << 16) | (cmp(x, node + 8) << 8) | cmp(x, node);
     return __tzcnt_u32(mask);
 }
 
-template <>
-unsigned rank<32>(reg x, int *node) {
+unsigned rank32(reg x, int *node) {
     unsigned mask = cmp(x, node)
                   | (cmp(x, node + 8) << 8)
                   | (cmp(x, node + 16) << 16)
@@ -45,11 +41,7 @@ unsigned rank<32>(reg x, int *node) {
     return __tzcnt_u32(mask);    
 }
 
-template <int b>
-void permute(int *node);
-
-template <>
-void permute<16>(int *node) {
+void permute16(int *node) {
     // a b c d -> a c b d
     const reg perm_mask = _mm256_set_epi32(3, 2, 1, 0, 7, 6, 5, 4);
     reg* middle = (reg*) (node + 4);
@@ -58,22 +50,17 @@ void permute<16>(int *node) {
     _mm256_storeu_si256(middle, x);
 }
 
-template <>
-void permute<32>(int *node) {
+void permute32(int *node) {
     // a b c d 1 2 3 4 -> (a c) (b d) (1 3) (2 4) -> (a c) (1 3) (b d) (2 4)
-    permute<16>(node);
-    permute<16>(node + 16);
+    permute16(node);
+    permute16(node + 16);
     reg x = _mm256_load_si256((reg*) (node + 8));
     reg y = _mm256_load_si256((reg*) (node + 16));
     _mm256_storeu_si256((reg*) (node + 8), y);
     _mm256_storeu_si256((reg*) (node + 16), x);
 }
 
-template <int b>
-unsigned permuted_rank(reg x, int *node);
-
-template <>
-unsigned permuted_rank<16>(reg x, int *node) {
+unsigned permuted_rank16(reg x, int *node) {
     reg a = _mm256_load_si256((reg*) node);
     reg b = _mm256_load_si256((reg*) (node + 8));
 
@@ -86,8 +73,7 @@ unsigned permuted_rank<16>(reg x, int *node) {
     return __tzcnt_u32(mask) >> 1; // handle shifts?
 }
 
-template<>
-unsigned permuted_rank<32>(reg x, int *node) {
+unsigned permuted_rank32(reg x, int *node) {
     reg a = _mm256_load_si256((reg*) node);
     reg b = _mm256_load_si256((reg*) (node + 8));
     reg c = _mm256_load_si256((reg*) (node + 16));
@@ -106,15 +92,41 @@ unsigned permuted_rank<32>(reg x, int *node) {
     return __tzcnt_u32(mask) >> 1;
 }
 
-// when C++ compilers start supporting this:
-constexpr class Layer {
+struct Layer {
     int size;      // size of blocks on cache layer
     bool permuted; // whether the blocks there are permuted (3-4 cycles faster)
     bool prefetch; // prefetch the first possible child of the next layer
                    //  (not necessarily belonging to the cache line we are going to read)
-    
-    constexpr Layer() : ??? {
-        ???
+
+    constexpr Layer() : size(8), permuted(false), prefetch(false) {}
+
+    constexpr Layer(int size, bool permuted, bool prefetch)
+                  : size(size), permuted(permuted), prefetch(prefetch) {}
+
+    // I have no idea how to do this kind of compile-time polymorphism in C++
+    // so let's do this and rely on compiler optimization
+    void permute(int *node) const {
+        //static_assert(permuted);
+        if (size == 16)
+            permute16(node);
+        else
+            permute32(node);
+    };
+
+    unsigned rank(reg x, int *node) const {
+        if (permuted) {
+            if (size == 16)
+                return permuted_rank16(x, node);
+            else // (size == 32)
+                return permuted_rank32(x, node);
+        } else {
+            if (size == 8)
+                return rank8(x, node);
+            else if (size == 16)
+                return rank16(x, node);
+            else // (size == 32)
+                return rank32(x, node);
+        }
     }
 };
 
@@ -124,7 +136,18 @@ struct STree {
 
     static constexpr int H = sizeof...(block_sizes); // structure height
     static constexpr int B[H] = {block_sizes...};    // block sizes at each level
-    
+
+    struct Architect {
+        Layer L[H];
+        
+        constexpr Architect() : L{} {
+            for (int i = 0; i < H; i++)
+                L[i] = {B[i], (i < H - 1), false};
+        }    
+    };
+
+    static constexpr Architect A;
+
     // number of full blocks in a layer
     constexpr int blocks(int n, int b) {
         return (n + b - 1) / b;
@@ -139,7 +162,7 @@ struct STree {
         return (n + b) / (b + 1) * b;
     }
 
-    // the maximum supposed dataset size
+    // the maximum supported dataset size
     // currently used just for compile-time checking
     constexpr int capacity() {
         // maybe this could be folded with std::accumulate
@@ -193,10 +216,10 @@ struct STree {
             }
         }
 
-        for (int h = 1; h < H; h++)
-            for (int i = offset(h); i < offset(h + 1); i += B[h])
-                if (B[h] >= 16)
-                    permute<B[h]>(t + i);
+        for (int h = 0; h < H; h++)
+            if (A.L[h].permuted)
+                for (int i = offset(h); i < offset(h + 1); i += B[h])
+                    A.L[h].permute(t + i);
     }
 
     // we need lower_bound, but upper bound is just easier to implement
@@ -204,17 +227,13 @@ struct STree {
         unsigned k = 0;
         reg x = _mm256_set1_epi32(_x);
         for (int h = H - 1; h > 0; h--) {
-            unsigned i;
-            if (B[h] >= 16)
-                i = permuted_rank<B[h]>(x, t + offset(h) + k);
-            else
-                i = rank<B[h]>(x, t + offset[h] + k);
+            unsigned i = A.L[h].rank(x, t + offset(h) + k);
             // compiler may need help with optimizing shifts here
             k = k * (B[h] + 1) + i * B[h - 1];
             //if (N > (1 << 21) && h == 1)
             //    __builtin_prefetch(t + k);
         }
-        unsigned i = rank<B[0], false>(x, t + k);
+        unsigned i = A.L[0].rank(x, t + k);
         return t[k + i]; // return index or a pair?
     }
 };
