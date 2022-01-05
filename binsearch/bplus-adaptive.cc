@@ -233,6 +233,7 @@ struct STree {
     }
 
     // we need lower_bound, but upper bound is just easier to implement
+    /*
     int upper_bound(int _x) {
         unsigned k = 0;
         reg x = _mm256_set1_epi32(_x);
@@ -244,6 +245,45 @@ struct STree {
             //    __builtin_prefetch(t + k);
         }
         unsigned i = A.L[0].rank(x, t + k);
+        return t[k + i]; // return index or a pair?
+    }
+    */
+
+    unsigned inner_rank(int h, reg x, int *node) {
+        if (B[h] == 8)
+            return rank8(x, node);
+        else if (B[h] == 16)
+            return permuted_rank16(x, node);
+        else
+            return permuted_rank32(x, node);
+    }
+
+    unsigned outer_rank(reg x, int *node) {
+        if (B[0] == 8)
+            return rank8(x, node);
+        else if (B[0] == 16)
+            return rank16(x, node);
+        else
+            return rank32(x, node);
+    }
+
+    // this wrapper is needed to unroll the main loop because C++ has no constexpr for
+    template <int h, class F>
+    constexpr void descend(F&& f) {
+        if constexpr (h > 0) {
+            f(std::integral_constant<int, h>());
+            descend<h - 1>(f);
+        }
+    }
+
+    int upper_bound(int _x) {
+        unsigned k = 0;
+        reg x = _mm256_set1_epi32(_x);
+        descend<H - 1>([&](auto h){
+            unsigned i = inner_rank(h, x, t + offset(h) + k);
+            k = k * (B[h] + 1) + i * B[h - 1];
+        });
+        unsigned i = outer_rank(x, t + k);
         return t[k + i]; // return index or a pair?
     }
 };
