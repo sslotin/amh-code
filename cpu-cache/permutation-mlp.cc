@@ -10,7 +10,7 @@ using namespace std;
 #endif
 
 const int M = N / D;
-const int K = (1<<25) / N;
+const int K = (1<<27) / N;
 
 int p[M], q[D][M];
 
@@ -30,7 +30,6 @@ int main() {
     volatile int s = 0;
 
     for (int t = 0; t < K; t++) {
-        #pragma GCC unroll 8
         for (int i = 0; i < M; i++)
             for (int d = 0; d < D; d++)
                 k[d] = q[d][k[d]];
