@@ -1,13 +1,26 @@
 #include <bits/stdc++.h>
+#include <x86intrin.h>
 using namespace std;
 
 #ifndef N
 #define N (1<<20)
 #endif
 
-int p[N], q[N];
+int p[N+4], q[N+4];
 
 const int K = (1<<25) / N;
+
+alignas(32) int buff[4];
+
+int load(int *a) {
+    int idx = (uint64_t(a) % 16) / 4;
+    __m128i *ptr = (__m128i*) (uint64_t(a) / 16 * 16);
+    __m128i x = _mm_stream_load_si128(ptr);
+    _mm_store_si128((__m128i*) buff, x);
+    //cerr << buff[idx] << endl;
+    //cerr << a << " " << ptr << " " << idx << endl;
+    return buff[idx];
+}
 
 int main() {
     iota(p, p + N, 0);
@@ -28,8 +41,7 @@ int main() {
         #pragma GCC unroll 8
         for (int i = 0; i < N; i++) {
             //__builtin_prefetch(&a[i + 10 * D]);
-            //cerr << q[k] << endl;
-            k = q[k];
+            k = load(&q[k]);
             //cerr << k << endl;
         }
         s ^= k;
