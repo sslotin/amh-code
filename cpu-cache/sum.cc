@@ -15,11 +15,11 @@ const int K = 1e10 / N;
 int a[N];
 
 int main() {
-    clock_t start = clock();
-
     for (int i = 0; i < N; i++)
         a[i] = rand() % 100;
 
+    clock_t start = clock();
+    
     int s = 0;
 
     for (int t = 0; t < K; t++) {

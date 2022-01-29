@@ -17,8 +17,6 @@ int a[N];
 int main() {
     clock_t start = clock();
 
-    int s = 0;
-
     for (int t = 0; t < K; t++) {
         __sync_synchronize();
         // memset(a, 0, sizeof a);
@@ -29,8 +27,6 @@ int main() {
 
     float duration = float(clock() - start) / CLOCKS_PER_SEC;
     printf("%.2f GFLOPS\n", 1e-9 * N * K / duration);
-
-    printf("%d\n", s);
 
     return 0;
 }
