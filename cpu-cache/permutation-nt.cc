@@ -22,6 +22,8 @@ int load(int *a) {
     return buff[idx];
 }
 
+int garbage[1<<20];
+
 int main() {
     iota(p, p + N, 0);
     random_shuffle(p, p + N);
@@ -32,6 +34,12 @@ int main() {
         q[k] = p[i];
         k = p[i];
     }
+
+    
+    //for (int i = 0; i < (1<<20); i++)
+    //    s += garbage[i];
+    
+    //memset(garbage, 0, sizeof garbage);
 
     clock_t start = clock();
 

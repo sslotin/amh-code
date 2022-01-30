@@ -24,6 +24,7 @@ int main() {
     for (int t = 0; t < K; t++) {
         __sync_synchronize();
 
+        /*
         vec* v = (vec*) a;
         volatile __m256i x;
 
@@ -31,6 +32,7 @@ int main() {
         for (int i = 0; i < N / 8; i++) {
             x = _mm256_load_si256((__m256i*) &v[i]);
         }
+        */
 
 
         /*
@@ -44,8 +46,7 @@ int main() {
             __m256 *ptr = (__m256*) &v[i];
             asm volatile ("vmovdqa (%1), %0" : "=r" (x) : "r" (ptr));
         }
-        */
-        /*        
+        */        
         vec b[B] = {0};
         vec* v = (vec*) a;
 
@@ -62,7 +63,6 @@ int main() {
         
         for (int i = 0; i < 8; i++)
             s += b[0][i];
-        */
     }
 
     float duration = float(clock() - start) / CLOCKS_PER_SEC;
