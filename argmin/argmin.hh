@@ -1,14 +1,22 @@
 #include <bits/stdc++.h>
 
-const int n = (1<<16);
+#ifndef n
+#define n (1<<16)
+#endif
+
 alignas(64) int a[n];
 
 int argmin();
 
 int main() {
+    #ifdef DEC
+    for (int i = 0; i < n; i++)
+        a[i] = n - i;
+    #else
     for (int i = 0; i < n; i++)
         a[i] = rand();
-    
+    #endif
+
     volatile int k = argmin();
     
     int m = (0 <= k && k < n ? a[k] : -1);
@@ -16,7 +24,7 @@ int main() {
 
     clock_t start = clock();
 
-    int cnt = (1 << 30) / n;
+    int cnt = (1ll << 31) / n;
 
     for (int i = 0; i < cnt; i++)
         k = argmin();
