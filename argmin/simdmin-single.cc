@@ -8,21 +8,27 @@ vec min(vec x, vec y) {
     return (x < y ? x : y);
 }
 
+int mask(vec x) {
+    return _mm256_movemask_epi8((__m256i) x);
+}
+
+bool zero(vec x) {
+    return _mm256_testz_si256((__m256i) x, (__m256i) x);
+}
+
 int argmin() {
     vec *v = (vec*) a;
     
-    int m = INT_MAX, k = 0;
-    vec p, t;
-    t = p = m + vec{};
+    int ms = INT_MAX, idx = 0;
+    vec mv = ms + vec{};
 
     for (int i = 0; i < n / B; i++) {
-        t = min(t, v[i]);
-        int mask = _mm256_movemask_epi8((__m256i) (p == t));
-        if (mask != -1) { [[unlikely]]
-            for (int j = B * i; j < B * i + 2 * B; j++)
-                if (a[j] < m)
-                    m = a[k = j];
-            t = p = m + vec{};
+        vec t = min(t, v[i]);
+        if (mask(p == t) != -1) { [[unlikely]]
+            for (int j = 0; j < 8; j++)
+                if (a[8 * i + j] < m)
+                    m = a[k = 8 * i + j];
+            t = mv = m + vec{};
         }
     }
     

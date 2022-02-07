@@ -9,6 +9,8 @@ vec min(vec x, vec y) {
 }
 
 int argmin() {
+    printf("%d\n", n);
+
     vec *v = (vec*) a;
     
     vec t[K];

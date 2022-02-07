@@ -1,38 +1,37 @@
 #include <bits/stdc++.h>
 
-#ifndef n
-#define n (1<<16)
+int argmin(int *a, int n);
+
+#ifndef N
+#define N (1<<16)
 #endif
 
-alignas(64) int a[n];
+const int K = 1e9 / N;
 
-int argmin();
+alignas(64) int a[N];
 
 int main() {
     #ifdef DEC
-    for (int i = 0; i < n; i++)
-        a[i] = n - i;
+    for (int i = 0; i < N; i++)
+        a[i] = N - i;
     #else
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < N; i++)
         a[i] = rand();
     #endif
 
-    volatile int k = argmin();
+    volatile int k = argmin(a, N);
     
-    int m = (0 <= k && k < n ? a[k] : -1);
+    int m = (0 <= k && k < N ? a[k] : -1);
     printf("%d %d\n", k, m);
 
     clock_t start = clock();
 
-    int cnt = (1ll << 31) / n;
+    for (int i = 0; i < K; i++)
+        k = argmin(a, N);
 
-    for (int i = 0; i < cnt; i++)
-        k = argmin();
+    float avg = float(clock() - start) / CLOCKS_PER_SEC / K;
 
-    float avg = float(clock() - start) / CLOCKS_PER_SEC / cnt;
-
-    printf("%.8f x %d\n", avg, cnt);
-    printf("%.2f GFLOPS\n", 1e-9 * n / avg);
+    printf("%.2f GFLOPS\n", 1e-9 * N / avg);
 
     return 0;
 }
