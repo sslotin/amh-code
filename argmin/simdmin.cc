@@ -8,7 +8,7 @@ vec min(vec x, vec y) {
     return (x < y ? x : y);
 }
 
-int argmin() {
+int argmin(int *a, int n) {
     vec *v = (vec*) a;
     
     int m = INT_MAX, k = 0;

@@ -26,8 +26,10 @@ int main() {
 
     clock_t start = clock();
 
-    for (int i = 0; i < K; i++)
+    for (int i = 0; i < K; i++) {
+        __sync_synchronize();
         k = argmin(a, N);
+    }
 
     float avg = float(clock() - start) / CLOCKS_PER_SEC / K;
 

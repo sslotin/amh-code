@@ -4,13 +4,11 @@
 const int B = 8;
 typedef int vec __attribute__ (( vector_size(4 * B) ));
 
-int argmin() {
-    vec min = INT_MAX + vec{};
-    vec idx;
-
-    vec cur = {0, 1, 2, 3, 4, 5, 6, 7};
-    
+int argmin(int *a, int n) {
     vec *v = (vec*) a;
+
+    vec min = INT_MAX + vec{};
+    vec idx, cur = {0, 1, 2, 3, 4, 5, 6, 7};
 
     // blend    01
     // vpcmpgtd 013

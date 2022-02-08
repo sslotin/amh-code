@@ -20,15 +20,17 @@ int argmin(int *a, int n) {
         y1 = _mm256_min_epi32(y1, y3);
         reg mask = _mm256_cmpgt_epi32(p, y1);
         if (!_mm256_testz_si256(mask, mask)) { [[unlikely]]
+            idx = i;
             for (int j = i; j < i + 32; j++)
-                if (a[j] < min) [[unlikely]]
-                    min = a[idx = j];
+                min = (a[j] < min ? a[j] : min);
             p = _mm256_set1_epi32(min);
             //cnt++;
         }
     }
 
-    //printf("%d\n", cnt);
+    for (int i = idx; i < idx + 31; i++)
+        if (a[i] == min)
+            return i;
     
-    return idx;
+    return idx + 31;
 }
