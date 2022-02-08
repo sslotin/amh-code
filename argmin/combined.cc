@@ -1,9 +1,13 @@
 #include "argmin.hh"
 #include <x86intrin.h>
 
-const int B = 8, T = 2;
-typedef int vec __attribute__ (( vector_size(4 * B) ));
-
+/*
+int argmin(int *a, int n) {
+    int needle = min(a, n);
+    int idx = find(a, n, needle);
+    return idx;
+}
+*/
 
 typedef __m256i reg;
 
@@ -14,6 +18,11 @@ unsigned get_mask(reg m) {
 reg cmp(reg x, int *p) {
     reg y = _mm256_load_si256( (reg*) p );
     return _mm256_cmpeq_epi32(x, y);
+}
+
+reg min(reg x, int *p) {
+    reg y = _mm256_load_si256( (reg*) p );
+    return _mm256_min_epi32(x, y);
 }
 
 int find(int *a, int n, int needle) {
@@ -39,34 +48,41 @@ int find(int *a, int n, int needle) {
     return -1;
 }
 
-vec min(vec x, vec y) {
-    return (x < y ? x : y);
+const int B = 2048;
+
+reg hmin(reg x) {
+    // 2  1  4  3  6  5  8  7 
+    reg y = (reg) _mm256_permute_ps( (__m256) x, 1 + (0 << 2) + (3 << 4) + (2 << 6));
+    x = _mm256_min_epi32(x, y);
+    // 2  1  4  3  6  5  8  7 
+    y = (reg) _mm256_permute_pd( (__m256d) x, 5);
+    x = _mm256_min_epi32(x, y);
+    // 5  6  7  8  1  2  3  4 
+    y = _mm256_permute2x128_si256(x, y, 1);
+    x = _mm256_min_epi32(x, y);
+    return x;
 }
 
 int argmin(int *a, int n) {
-    vec *v = (vec*) a;
-    
-    vec t[K];
-    for (int i = 0; i < T; i++)
-        t[i] = INT_MAX + vec{};
+    int idx = 0;
+    reg m, m1, m2;
+    m = m1 = m2 = _mm256_set1_epi32(INT_MAX);
 
-    for (int i = 0; i < n / B; i += T)
-        for (int j = 0; j < T; j++)
-            t[j] = min(t[j], v[i + j]);
-    
-    for (int i = 1; i < T; i++)
-        t[0] = min(t[0], t[i]);
+    for (int i = 0; i < N; i += B) {
+        for (int j = i; j < i + B; j += 16) {
+            m1 = min(m1, &a[j]);
+            m2 = min(m2, &a[j + 8]);
+        }
+        reg t = _mm256_min_epi32(m1, m2);
+        reg mask = _mm256_cmpgt_epi32(m, t);
+        if (!_mm256_testz_si256(mask, mask)) {
+            idx = i;
+            m = hmin(t);
+            //printf("%d %d\n", idx, _mm256_extract_epi32(m, 0));
+        }
+    }
 
-    int m = t[0][0];
+    //printf("%d %d\n", idx, _mm256_extract_epi32(m, 0));
 
-    for (int i = 1; i < B; i++)
-        m = std::min(m, t[0][i]);
-
-    return m;
-}
-
-const int B = 256;
-
-int argmin(int *a, int n) {
-    for ()
+    return idx + find(a + idx, B, _mm256_extract_epi32(m, 0));
 }
