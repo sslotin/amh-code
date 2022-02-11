@@ -25,7 +25,7 @@ void prepare(int *a, int _n) {
 int lower_bound(int x) {
     int k = 1;
     while (k <= n) {
-        //__builtin_prefetch(t + k * 32);
+        __builtin_prefetch(t + k * B * 2);
         
         //__builtin_prefetch(t + k * 64);
         //__builtin_prefetch(t + k * 64 + 16);

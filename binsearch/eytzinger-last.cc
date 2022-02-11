@@ -27,7 +27,7 @@ void prepare(int *a, int _n) {
     iters = std::__lg(n + 1);
 }
 
-__attribute__((optimize("if-conversion2")))
+//__attribute__((optimize("if-conversion2")))
 int lower_bound(int x) {
     int k = 1;
     //#pragma GCC unroll 4

@@ -17,11 +17,11 @@ void eytzinger(int k = 1) {
 
 void prepare(int *a, int _n) {
     n = _n;
-    int N = (1 << (std::__lg(n) + 1));
+    int Nr = (1 << (std::__lg(n) + 1));
     _a = a;
-    t = (int*) std::aligned_alloc(64, 4 * (N + 1));
+    t = (int*) std::aligned_alloc(64, 4 * (Nr + 1));
     eytzinger();
-    n = N;
+    n = Nr;
 }
 
 int lower_bound(int x) {
