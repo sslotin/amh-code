@@ -1,6 +1,6 @@
 #include "binsearch.hh"
 
-std::set<int> s;
+std::multiset<int> s; // <- slightly unfair if using just set
 
 void prepare(int *a, int n) {
     for (int i = 0; i < n; i++)
