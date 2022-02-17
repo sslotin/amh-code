@@ -1,5 +1,6 @@
 // clang++ -O3 -std=c++17 -march=native standalone.cc
 // GCC also works, but is slightly worse
+
 // On Linux, make sure madvise is enabled to use hugepages
 // (https://en.algorithmica.org/hpc/cpu-cache/paging/#changing-page-size)
 
@@ -8,8 +9,10 @@
 
 #include <bits/stdc++.h>
 #include <x86intrin.h>
-//#include "memoryapi.h"
 #include <sys/mman.h>
+
+// Windows:
+// #include "memoryapi.h"
 
 
 typedef __m256i reg;
@@ -57,7 +60,8 @@ void prepare(int *a) {
     #ifdef __linux__
     madvise(btree, T, MADV_HUGEPAGE);
     #endif
-    //btree = (int*) VirtualAlloc(NULL, T, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    // Windows:
+    // btree = (int*) VirtualAlloc(NULL, T, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
     for (int i = N; i < S; i++)
         btree[i] = INF;
@@ -158,7 +162,7 @@ int main() {
     double y = timeit(lower_bound);
 
     printf("std::lower_bound: %.2f\n", x);
-    printf("S-tree: %.2f\n", y);
+    printf("S+ tree: %.2f\n", y);
 
     printf("Speedup: %.2f\n", x / y);
     
