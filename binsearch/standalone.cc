@@ -1,5 +1,6 @@
 // clang++ -O3 -std=c++17 -march=native standalone.cc
-// GCC also works, but is slightly worse
+// GCC also compiles, but the performance is slightly worse
+// Requires an x86 CPU with at least AVX2
 
 // On Linux, make sure madvise is enabled to use hugepages
 // (https://en.algorithmica.org/hpc/cpu-cache/paging/#changing-page-size)
