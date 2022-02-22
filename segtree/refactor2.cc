@@ -5,6 +5,7 @@ typedef int vec __attribute__ (( vector_size(32) ));
 
 const int b = 4, B = (1 << b);
 
+// is it tight enough?
 constexpr int round(int k) {
     return k / B * B; // (k & ~(B - 1));
 }

@@ -18,9 +18,9 @@ void add(int k, int x) {
 }
 
 int _sum(int k, int v = 1, int l = 0, int r = N) {
-    if (l > k)
+    if (l >= k)
         return 0;
-    if (r - 1 <= k)
+    if (r <= k)
         return t[v];
     int m = (l + r) / 2;
     return _sum(k, 2 * v, l, m)

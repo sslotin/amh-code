@@ -3,7 +3,7 @@
 struct segtree {
     int lb, rb;
     int s = 0;
-    segtree *l = 0, *r = 0;
+    segtree *l = nullptr, *r = nullptr;
 
     segtree(int lb, int rb) : lb(lb), rb(rb) {
         if (lb + 1 < rb) {
@@ -15,7 +15,7 @@ struct segtree {
     
     void add(int k, int x) {
         s += x;
-        if (l) {
+        if (l != nullptr) {
             if (k < l->rb)
                 l->add(k, x);
             else
@@ -23,7 +23,7 @@ struct segtree {
         }
     }
     
-    int sum(int k) { // [0, k)
+    int sum(int k) {
         if (rb <= k)
             return s;
         if (lb >= k)
@@ -39,5 +39,5 @@ void add(int k, int x) {
 }
 
 int sum(int k) {
-    return root.sum(k + 1);
+    return root.sum(k);
 }

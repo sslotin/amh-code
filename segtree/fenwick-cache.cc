@@ -1,13 +1,13 @@
 #include "prefix.hh"
 
-inline int hole(int k) {
+inline constexpr int hole(int k) {
     return k + (k >> 10);
 }
 
-int t[2*n];
+int t[hole(N) + 1];
 
 void add(int k, int x) {
-    for (k += 1; k <= n; k += k & -k)
+    for (k += 1; k <= N; k += k & -k)
         t[hole(k)] += x;
 }
 
@@ -17,4 +17,3 @@ int sum(int k) {
         res += t[hole(k)];
     return res;
 }
-

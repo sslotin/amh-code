@@ -14,8 +14,7 @@ int sum(int k) {
     int res = 0;
     k += N - 1;
     while (k != 0) {
-        if (~k & 1)
-            res += t[k];
+        res += (k & 1) ? 0 : t[k];
         k = (k - 1) / 2;
     }
     return res;
