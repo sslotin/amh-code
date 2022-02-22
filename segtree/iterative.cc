@@ -16,7 +16,7 @@ int sum(int k) {
     while (k != 0) {
         if (~k & 1)
             res += t[k];
-        k = (k - 1) / 2;
+        k = (k - 1) >> 1;
     }
     return res;
 }

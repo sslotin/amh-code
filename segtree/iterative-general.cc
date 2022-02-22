@@ -32,11 +32,12 @@ void add(int k, int x) {
 
 int sum(int k) {
     k = leaf(k - 1);
-    int res = 0;
+    int s = 0;
     while (k != 0) {
+        // s += ((~k & 1) == 1) * t[k];
         if (~k & 1)
-            res += t[k];
-        k = (k - 1) / 2;
+            s += t[k];
+        k = (k - 1) >> 1;
     }
-    return res;
+    return s;
 }

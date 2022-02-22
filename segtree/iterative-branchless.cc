@@ -1,9 +1,17 @@
 #include "prefix.hh"
 
+const int last_layer = 1 << __lg(2 * N - 1);
+
 int t[2 * N];
 
+int leaf(int k) {
+    k += last_layer;
+    k -= (k >= 2 * N) * N;
+    return k;
+}
+
 void add(int k, int x) {
-    k += N;
+    k = leaf(k);
     while (k != 0) {
         t[k] += x;
         k >>= 1;
@@ -11,11 +19,11 @@ void add(int k, int x) {
 }
 
 int sum(int k) {
-    int res = 0;
-    k += N - 1;
+    k = leaf(k - 1);
+    int s = 0;
     while (k != 0) {
-        res += (k & 1) ? 0 : t[k];
-        k = (k - 1) / 2;
+        s += ((k & 1) == 0) * t[k];
+        k = (k - 1) >> 1;
     }
-    return res;
+    return s;
 }
