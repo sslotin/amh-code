@@ -13,7 +13,7 @@ void add(int k, int x) {
 
 int sum(int k) {
     int res = 0;
-    for (k += 1; k > 0; k -= k & -k)
+    for (; k != 0; k &= k - 1)
         res += t[hole(k)];
     return res;
 }
