@@ -8,21 +8,9 @@ int leaf(int k) {
     k += last_layer;
     k -= (k >= 2 * N) * N;
     return k;
-    /*
-    k += last_layer;
-    if (k >= 2 * N)
-        k += (N - last_layer);
-    return k;
-    */
 }
 
 void add(int k, int x) {
-    /*
-    cout << N << " " << last_layer << endl;
-    for (int i = 0; i < N; i++)
-        cout << i << " " << leaf(i) << " " << bitset<5>(leaf(i)) << endl;
-    exit(0);
-    */
     k = leaf(k);
     while (k != 0) {
         t[k] += x;
