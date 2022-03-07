@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-using namespace std;
 
 void prepare();
 void add(int x);

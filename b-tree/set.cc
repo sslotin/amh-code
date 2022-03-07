@@ -1,6 +1,6 @@
 #include "btree.hh"
 
-multiset<int> s;
+std::multiset<int> s;
 
 void prepare() {}
 
