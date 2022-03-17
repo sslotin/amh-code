@@ -4,7 +4,7 @@ std::multiset<int> s;
 
 void prepare() {}
 
-void add(int x) {
+void insert(int x) {
     s.insert(x);
 }
 

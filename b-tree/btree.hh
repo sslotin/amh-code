@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 
 void prepare();
-void add(int x);
+void insert(int x);
 int lower_bound(int x);
 
 int main() {
@@ -29,7 +29,7 @@ int main() {
         int cnt = S - size;
 
         while (size < S)
-            add(x[size++]);
+            insert(x[size++]);
 
         float duration = float(clock() - start) / CLOCKS_PER_SEC;
         printf("%d %.2f", size, 1e9 * duration / cnt);
