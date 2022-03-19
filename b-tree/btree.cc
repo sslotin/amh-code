@@ -27,8 +27,8 @@ int H = 1; // tree height
 
 const int R = 1e8; // reserve
 
-alignas(64) int tree[R], n_tree = 0; // 31 (+ 1) + 32
-alignas(64) int data[R], n_data = B; // 31
+alignas(64) int tree[R], data[R];
+int n_tree = 0, n_data = B; // 31 (+ 1) + 32 and 31
 
 int root = 0;
 
@@ -37,8 +37,8 @@ struct Precalc {
 
     constexpr Precalc() : mask{} {
         for (int i = 0; i < B; i++)
-            for (int j = 0; j < B; j++)
-                mask[i][j] = (i + j < B ? -1 : 0);
+            for (int j = i; j < B - 1; j++)
+                mask[i][j] = -1;
     }
 };
 
@@ -50,10 +50,10 @@ void prepare() {
 }
 
 void insert(int *node, int i, int x) {
-    for (int d = B - 8; d >= 0; d -= 8) {
-        reg t = _mm256_loadu_si256((reg*) &node[i + d]);
-        reg mask = _mm256_load_si256((reg*) &P.mask[i]);
-        _mm256_maskstore_epi32(&node[i + d + 1], mask, t);
+    for (int j = B - 8; j >= 0; j -= 8) {
+        reg t = _mm256_load_si256((reg*) &node[j]);
+        reg mask = _mm256_load_si256((reg*) &P.mask[i][j]);
+        _mm256_maskstore_epi32(&node[j + 1], mask, t);
     }
     node[i] = x;
 }
@@ -84,39 +84,47 @@ void insert(int _x) {
 
     unsigned i = rank32(x, &data[k]);
 
-    bool filled = (data[k + B - 2] != INT_MAX);
-    bool updated = (data[k + i] == INT_MAX);
+    bool filled  = (data[k + B - 2] != INT_MAX);
+    bool updated = (data[k + i]     == INT_MAX);
     
     insert(data + k, i, _x);
 
     if (filled) {
-        // create a new node
+        // create a new leaf node
         move(data + k, data + n_data);
         n_data += B;
         
-        unsigned l = data[k + 15];
+        unsigned l = data[k + B / 2 - 1];
 
         while (ss) {
             k = sk[ss];
             i = si[ss];
             ss--;
 
-            filled = (tree[k + B - 2] != INT_MAX);
-            updated = (tree[k + i] == INT_MAX);
+            filled  = (tree[k + B - 2] != INT_MAX);
+            updated = (tree[k + i]     == INT_MAX);
 
             tree[k + i] = _x;
             insert(tree + k, i, l);
+            // todo: pointers too
 
             if (!filled)
                 break;
 
-            // create a new node
-            move(tree + k, tree + n_tree);
+            // create a new internal node
+            move(tree + k, tree + n_tree); // keys
+            move(tree + k + B, tree + n_tree + B); // pointers
             n_tree += 2 * B;
         }
     }
 
-    // what is a split happened?
+    if (ss == 0 && filled) {
+        // todo: grow the tree upwards
+        root = n_tree;
+        tree[n_tree] = // last element of current root;
+        n_tree += 2 * B;
+        H++;
+    }
     
     while (ss && updated) {
         k = sk[ss];
