@@ -10,13 +10,12 @@ int main() {
 
     static int x[R], y[Q];
 
-    x[0] = RAND_MAX;
+    const int LIM = (1 << 30);
+
+    x[0] = LIM;
 
     for (int i = 1; i < R; i++)
-        x[i] = rand();
-    
-    for (int i = 0; i < Q; i++)
-        y[i] = rand();
+        x[i] = rand() % LIM;
     
     prepare();
 
@@ -33,6 +32,9 @@ int main() {
 
         float duration = float(clock() - start) / CLOCKS_PER_SEC;
         printf("%d %.2f", size, 1e9 * duration / cnt);
+
+        for (int i = 0; i < Q; i++)
+            y[i] = rand() % LIM;
 
         // benchmark reads
         start = clock();
