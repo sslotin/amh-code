@@ -27,8 +27,8 @@ int H = 1; // tree height
 
 const int R = 1e8; // reserve
 
-alignas(64) int tree[R], data[R];
-int n_tree = 0, n_data = B; // 31 (+ 1) + 32 and 31
+alignas(64) int tree[R];
+int n_tree = B; // 31 (+ 1) + 32 for internal nodes and 31 for data nodes
 
 int root = 0;
 
@@ -46,7 +46,7 @@ constexpr Precalc P;
 
 void prepare() {
     for (int i = 0; i < R; i++)
-        tree[i] = data[i] = INT_MAX;
+        tree[i] = INT_MAX;
 }
 
 void insert(int *node, int i, int x) {
@@ -58,13 +58,28 @@ void insert(int *node, int i, int x) {
     node[i] = x;
 }
 
+// also moves pointers
+void insert2(int *node, int i, int x) {
+    for (int j = B - 8; j >= 0; j -= 8) {
+        reg mask = _mm256_load_si256((reg*) &P.mask[i][j]);
+
+        reg t1 = _mm256_load_si256((reg*) &node[j]);
+        _mm256_maskstore_epi32(&node[j + 1], mask, t1);
+
+        // wrong?
+        reg t2 = _mm256_load_si256((reg*) &node[B + j]);
+        _mm256_maskstore_epi32(&node[B + j + 1], mask, t2);
+    }
+    node[i] = x;
+}
+
 // move the second half of a node
 void move(int *from, int *to) {
     for (int j = B / 2; j < B; j += 8) {
         const reg infs = _mm256_set1_epi32(INT_MAX);
         reg t = _mm256_load_si256((reg*) from + j);
         _mm256_store_si256((reg*) to + j, t);
-        _mm256_store_si256((reg*) from + j, infs);
+        _mm256_store_si256((reg*) from + j, infs); // probably not necessary for pointers
     }
 }
 
@@ -82,19 +97,19 @@ void insert(int _x) {
         k = tree[k + B + i];
     }
 
-    unsigned i = rank32(x, &data[k]);
+    unsigned i = rank32(x, &tree[k]);
 
-    bool filled  = (data[k + B - 2] != INT_MAX);
-    bool updated = (data[k + i]     == INT_MAX);
+    bool filled  = (tree[k + B - 2] != INT_MAX);
+    bool updated = (tree[k + i]     == INT_MAX);
     
-    insert(data + k, i, _x);
+    insert(tree + k, i, _x);
 
     if (filled) {
         // create a new leaf node
-        move(data + k, data + n_data);
-        n_data += B;
+        move(tree + k, tree + n_tree);
+        n_tree += B;
         
-        unsigned l = data[k + B / 2 - 1];
+        unsigned l = tree[k + B / 2 - 1];
 
         while (ss) {
             k = sk[ss];
@@ -105,9 +120,8 @@ void insert(int _x) {
             updated = (tree[k + i]     == INT_MAX);
 
             tree[k + i] = _x;
-            insert(tree + k, i, l);
-            // todo: pointers too
-
+            insert2(tree + k, i, l);
+            
             if (!filled)
                 break;
 
@@ -119,9 +133,13 @@ void insert(int _x) {
     }
 
     if (ss == 0 && filled) {
-        // todo: grow the tree upwards
+        tree[n_tree + B] = root;
+        tree[n_tree + B + 1] = n_tree - 2 * B;
+        
+        tree[n_tree] = tree[root + B / 2 - 1]; // last element of current root;
+        // add second element?
+
         root = n_tree;
-        tree[n_tree] = // last element of current root;
         n_tree += 2 * B;
         H++;
     }
@@ -146,7 +164,7 @@ int lower_bound(int _x) {
         k = tree[k + B + i];
     }
 
-    unsigned i = rank32(x, &data[k]);
+    unsigned i = rank32(x, &tree[k]);
 
-    return data[k + i]; // what if next block? maybe we store 31 elements?
+    return tree[k + i]; // what if next block? maybe we store 31 elements?
 }
