@@ -58,6 +58,7 @@ void insert(int *node, int i, int x) {
     node[i] = x;
 }
 
+/*
 // also moves pointers
 void insert2(int *node, int i, int x) {
     for (int j = B - 8; j >= 0; j -= 8) {
@@ -72,8 +73,9 @@ void insert2(int *node, int i, int x) {
     }
     node[i] = x;
 }
+*/
 
-// move the second half of a node
+// move the second half of a node and fill it with infinities
 void move(int *from, int *to) {
     for (int j = B / 2; j < B; j += 8) {
         const reg infs = _mm256_set1_epi32(INT_MAX);
@@ -83,7 +85,28 @@ void move(int *from, int *to) {
     }
 }
 
+void traverse(int k) {
+    std::cerr << "n " << k << std::endl << ">";
+    for (int i = 0; i < B; i++)
+        if (tree[k + i] != INT_MAX)
+            std::cerr << " " << tree[k + i];
+
+    std::cerr << std::endl << ">";
+    
+    for (int i = 0; i < B; i++)
+        if (tree[k + B + i] != INT_MAX)
+            std::cerr << " " << tree[k + B + i];
+
+    std::cerr << std::endl;
+
+    for (int i = 0; i < B; i++)
+        if (tree[k + B + i] != INT_MAX)
+            traverse(tree[k + B + i]);
+}
+
 void insert(int _x) {
+    std::cerr << std::endl << "insert " << _x << std::endl;
+
     unsigned sk[20], si[20], ss = 0;
     
     unsigned k = root;
@@ -101,6 +124,8 @@ void insert(int _x) {
 
     bool filled  = (tree[k + B - 2] != INT_MAX);
     bool updated = (tree[k + i]     == INT_MAX);
+
+    std::cerr << filled << " " << updated << std::endl;
     
     insert(tree + k, i, _x);
 
@@ -119,8 +144,8 @@ void insert(int _x) {
             filled  = (tree[k + B - 2] != INT_MAX);
             updated = (tree[k + i]     == INT_MAX);
 
-            tree[k + i] = _x;
-            insert2(tree + k, i, l);
+            insert(tree + k,     i,     _x);
+            insert(tree + k + B, i + 1, n_tree);
             
             if (!filled)
                 break;
@@ -132,12 +157,13 @@ void insert(int _x) {
         }
     }
 
+    // if we've split the root
     if (ss == 0 && filled) {
         tree[n_tree + B] = root;
         tree[n_tree + B + 1] = n_tree - 2 * B;
         
-        tree[n_tree] = tree[root + B / 2 - 1]; // last element of current root;
-        // add second element?
+        tree[n_tree] = tree[root + B / 2 - 1]; // last element of the current root
+        tree[n_tree + 1] = tree[n_tree - 2 * B + B / 2 - 1]; // last element of the newly created node
 
         root = n_tree;
         n_tree += 2 * B;
@@ -153,9 +179,13 @@ void insert(int _x) {
 
         updated = (tree[k + i] == INT_MAX);
     }
+
+    std::cerr << "the tree:" << std::endl;
+    traverse(root);
 }
 
 int lower_bound(int _x) {
+    std::cerr << std::endl << "lb " << _x << std::endl;
     unsigned k = root;
     reg x = _mm256_set1_epi32(_x - 1);
     
