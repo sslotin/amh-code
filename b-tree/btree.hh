@@ -5,7 +5,7 @@ void insert(int x);
 int lower_bound(int x);
 
 int main() {
-    const int L = 10000, R = 1e7, Q = 1e5;
+    const int L = 10000, R = 1e7, Q = 5e5;
     const float K = 1.17; // should be ~250 steps
 
     static int x[R], y[Q];
