@@ -58,65 +58,49 @@ void insert(int *node, int i, int x) {
     node[i] = x;
 }
 
-/*
-// also moves pointers
-void insert2(int *node, int i, int x) {
-    for (int j = B - 8; j >= 0; j -= 8) {
-        reg mask = _mm256_load_si256((reg*) &P.mask[i][j]);
-
-        reg t1 = _mm256_load_si256((reg*) &node[j]);
-        _mm256_maskstore_epi32(&node[j + 1], mask, t1);
-
-        // wrong?
-        reg t2 = _mm256_load_si256((reg*) &node[B + j]);
-        _mm256_maskstore_epi32(&node[B + j + 1], mask, t2);
-    }
-    node[i] = x;
-}
-*/
-
 // move the second half of a node and fill it with infinities
 void move(int *from, int *to) {
-    for (int j = B / 2; j < B; j += 8) {
-        const reg infs = _mm256_set1_epi32(INT_MAX);
-        reg t = _mm256_load_si256((reg*) from + j);
-        _mm256_store_si256((reg*) to + j, t);
-        _mm256_store_si256((reg*) from + j, infs); // probably not necessary for pointers
+    const reg infs = _mm256_set1_epi32(INT_MAX);
+    for (int i = 0; i < B / 2; i += 8) {
+        reg t = _mm256_load_si256((reg*) &from[B / 2 + i]);
+        _mm256_store_si256((reg*) &to[i], t);
+        _mm256_store_si256((reg*) &from[B / 2 + i], infs); // probably not necessary for pointers
     }
 }
 
-void traverse(int k) {
+void traverse(int k, int h) {
     std::cerr << "n " << k << std::endl << ">";
     for (int i = 0; i < B; i++)
         if (tree[k + i] != INT_MAX)
             std::cerr << " " << tree[k + i];
 
-    std::cerr << std::endl << ">";
-    
-    for (int i = 0; i < B; i++)
-        if (tree[k + B + i] != INT_MAX)
-            std::cerr << " " << tree[k + B + i];
+    if (h > 1) {
+        std::cerr << std::endl << ">";
+        
+        for (int i = 0; i < B; i++)
+            if (tree[k + B + i] != INT_MAX)
+                std::cerr << " " << tree[k + B + i];
 
-    std::cerr << std::endl;
+        std::cerr << std::endl;
 
-    for (int i = 0; i < B; i++)
-        if (tree[k + B + i] != INT_MAX)
-            traverse(tree[k + B + i]);
+        for (int i = 0; i < B; i++)
+            if (tree[k + B + i] != INT_MAX)
+                traverse(tree[k + B + i], h - 1);
+    }
 }
 
 void insert(int _x) {
-    std::cerr << std::endl << "insert " << _x << std::endl;
+    //std::cerr << std::endl << "insert " << _x << std::endl;
 
-    unsigned sk[20], si[20], ss = 0;
+    unsigned sk[20], si[20];
     
     unsigned k = root;
     reg x = _mm256_set1_epi32(_x - 1);
 
     for (int h = 0; h < H - 1; h++) {
         unsigned i = rank32(x, &tree[k]);
-        sk[ss] = k;
-        si[ss] = i;
-        ss++;
+        sk[h] = k;
+        si[h] = i;
         k = tree[k + B + i];
     }
 
@@ -125,67 +109,77 @@ void insert(int _x) {
     bool filled  = (tree[k + B - 2] != INT_MAX);
     bool updated = (tree[k + i]     == INT_MAX);
 
-    std::cerr << filled << " " << updated << std::endl;
+    //std::cerr << filled << " " << updated << std::endl;
     
     insert(tree + k, i, _x);
+
+    if (updated) {
+        // update parent nodes if needed
+        for (int h = H - 2; h >= 0; h--) {
+            int idx = sk[h] + si[h];
+            // unless it is the last element
+            if (tree[idx] != INT_MAX)
+                tree[idx] = _x;
+            if (tree[idx + 1] != INT_MAX)
+                break;
+            // ^ not needed if root
+        }
+    }
 
     if (filled) {
         // create a new leaf node
         move(tree + k, tree + n_tree);
-        n_tree += B;
         
-        unsigned l = tree[k + B / 2 - 1];
+        int v = tree[k + B / 2 - 1]; // new key to be inserted
+        int p = n_tree;              // pointer to the newly created node
+        
+        n_tree += B;
 
-        while (ss) {
-            k = sk[ss];
-            i = si[ss];
-            ss--;
+        for (int h = H - 2; h >= 0; h--) {
+            k = sk[h], i = si[h];
 
-            filled  = (tree[k + B - 2] != INT_MAX);
-            updated = (tree[k + i]     == INT_MAX);
+            filled = (tree[k + B - 3] != INT_MAX);
 
-            insert(tree + k,     i,     _x);
-            insert(tree + k + B, i + 1, n_tree);
+            // the node already has a correct key (right one) and a correct pointer (left one) 
+            insert(tree + k,     i,     v);
+            insert(tree + k + B, i + 1, p);
             
             if (!filled)
-                break;
+                break; // return?
 
             // create a new internal node
-            move(tree + k, tree + n_tree); // keys
-            move(tree + k + B, tree + n_tree + B); // pointers
+            move(tree + k,     tree + n_tree);     // move keys
+            move(tree + k + B, tree + n_tree + B); // move pointers
+
+            v = tree[k + B / 2 - 1];
+            tree[k + B / 2 - 1] = INT_MAX;
+
+            p = n_tree;
             n_tree += 2 * B;
         }
-    }
 
-    // if we've split the root
-    if (ss == 0 && filled) {
-        tree[n_tree + B] = root;
-        tree[n_tree + B + 1] = n_tree - 2 * B;
-        
-        tree[n_tree] = tree[root + B / 2 - 1]; // last element of the current root
-        tree[n_tree + 1] = tree[n_tree - 2 * B + B / 2 - 1]; // last element of the newly created node
+        if (filled) {
+            //std::cerr << "tree grows: " << H << " -> " << H + 1 << std::endl;
+            tree[n_tree] = v;
 
-        root = n_tree;
-        n_tree += 2 * B;
-        H++;
+            tree[n_tree + B] = root;
+            tree[n_tree + B + 1] = p;
+
+            root = n_tree;
+            n_tree += 2 * B;
+            H++;
+
+            //std::cerr << "the tree:" << std::endl;
+            //traverse(root, H);
+        }
     }
     
-    while (ss && updated) {
-        k = sk[ss];
-        i = si[ss];
-        ss--;
-
-        tree[k + i] = _x;
-
-        updated = (tree[k + i] == INT_MAX);
-    }
-
-    std::cerr << "the tree:" << std::endl;
-    traverse(root);
+    //std::cerr << "the tree:" << std::endl;
+    //traverse(root);
 }
 
 int lower_bound(int _x) {
-    std::cerr << std::endl << "lb " << _x << std::endl;
+    //std::cerr << std::endl << "lb " << _x << std::endl;
     unsigned k = root;
     reg x = _mm256_set1_epi32(_x - 1);
     
