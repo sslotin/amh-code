@@ -4,15 +4,11 @@
 const int B = 32;
 typedef __m256i reg;
 
+/*
 unsigned cmp(reg x, int *node) {
     reg y = _mm256_load_si256((reg*) node);
     reg mask = _mm256_cmpgt_epi32(y, x);
     return _mm256_movemask_ps((__m256) mask);
-}
-
-unsigned rank16(reg x, int *node) {
-    unsigned mask = (1 << 16) | (cmp(x, node + 8) << 8) | cmp(x, node);
-    return __tzcnt_u32(mask);
 }
 
 unsigned rank32(reg x, int *node) {
@@ -21,6 +17,45 @@ unsigned rank32(reg x, int *node) {
                   | (cmp(x, node + 16) << 16)
                   | (cmp(x, node + 24) << 24);
     return __tzcnt_u32(mask);    
+}
+*/
+
+void print(__m256i v) {
+    auto t = (unsigned char*) &v;
+    for (int i = 0; i < 32; i++)
+        std::cout << (t[i] == 255);
+    std::cout << std::endl;
+}
+
+reg cmp(reg x, int *node) {
+    reg y = _mm256_load_si256((reg*) node);
+    return _mm256_cmpgt_epi32(x, y);
+}
+
+unsigned rank32(reg x, int *node) {
+    reg m1 = cmp(x, node);
+    reg m2 = cmp(x, node + 8);
+    reg m3 = cmp(x, node + 16);
+    reg m4 = cmp(x, node + 24);
+
+    //print(m1);
+    //print(m2);
+    //print(m3);
+    //print(m4);
+
+    m1 = _mm256_blend_epi16(m1, m2, 0b01010101);
+    //print(m1);
+
+    m3 = _mm256_blend_epi16(m3, m4, 0b01010101);
+    //print(m3);
+
+    m1 = _mm256_packs_epi16(m1, m3);
+    //print(m1);
+    //std::cout << std::endl;
+
+    unsigned mask = _mm256_movemask_epi8(m1);
+
+    return __builtin_popcount(mask);    
 }
 
 int H = 1; // tree height
@@ -95,7 +130,7 @@ void insert(int _x) {
     unsigned sk[20], si[20];
     
     unsigned k = root;
-    reg x = _mm256_set1_epi32(_x - 1);
+    reg x = _mm256_set1_epi32(_x);
 
     for (int h = 0; h < H - 1; h++) {
         unsigned i = rank32(x, &tree[k]);
@@ -181,7 +216,7 @@ void insert(int _x) {
 int lower_bound(int _x) {
     //std::cerr << std::endl << "lb " << _x << std::endl;
     unsigned k = root;
-    reg x = _mm256_set1_epi32(_x - 1);
+    reg x = _mm256_set1_epi32(_x);
     
     for (int h = 0; h < H - 1; h++) {
         unsigned i = rank32(x, &tree[k]);

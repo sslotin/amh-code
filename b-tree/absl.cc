@@ -1,4 +1,4 @@
-// bazel run absl --copt="-march=native" --copt="-O3" --copt="-funroll-loops"
+// CC=clang++ bazel --batch run absl --copt="-march=native" --copt="-O3"
 
 #include "btree.hh"
 #include "absl/container/btree_set.h"
