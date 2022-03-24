@@ -134,8 +134,7 @@ void insert(int _x) {
 
     for (int h = 0; h < H - 1; h++) {
         unsigned i = rank32(x, &tree[k]);
-        sk[h] = k;
-        si[h] = i;
+        sk[h] = k, si[h] = i;
         k = tree[k + B + i];
     }
 
@@ -149,6 +148,14 @@ void insert(int _x) {
     insert(tree + k, i, _x);
 
     if (updated) {
+        for (int h = H - 2; h >= 0; h--) {
+            int idx = sk[h] + si[h];
+            tree[idx] = (tree[idx] < _x ? _x : tree[idx]);
+        }
+    }
+
+    /*
+    if (updated) {
         // update parent nodes if needed
         for (int h = H - 2; h >= 0; h--) {
             int idx = sk[h] + si[h];
@@ -160,6 +167,7 @@ void insert(int _x) {
             // ^ not needed if root
         }
     }
+    */
 
     if (filled) {
         // create a new leaf node
@@ -180,7 +188,7 @@ void insert(int _x) {
             insert(tree + k + B, i + 1, p);
             
             if (!filled)
-                break; // return?
+                return; // return?
 
             // create a new internal node
             move(tree + k,     tree + n_tree);     // move keys
