@@ -1,3 +1,6 @@
+// you can use this implementation as-is if you have AVX2
+
+// replace this header with <climits>:
 #include "btree.hh"
 #include <x86intrin.h>
 
@@ -5,7 +8,7 @@ const int B = 32;
 const int R = 1e8; // reserve
 
 alignas(64) int tree[R];
-int root = 0, n_tree = B; // 31 (+ 1) + 32 for internal nodes and 31 for data nodes
+int root = 0, n_tree = B; // 30 + 31 for internal nodes and 31 for data nodes
 int H = 1; // tree height
 
 void prepare() {
@@ -59,6 +62,9 @@ struct Precalc {
 };
 
 constexpr Precalc P;
+
+// maybe we *generate* this mask instead of storing it?
+// we can store 4 vector registers indices and then do a comparison against broadcasted i
 
 void insert(int *node, int i, int x) {
     for (int j = B - 8; j >= 0; j -= 8) {
