@@ -83,27 +83,25 @@ void move(int *from, int *to) {
 }
 
 void insert(int _x) {
-    unsigned s[20]; // stack
+    unsigned sk[10], si[10]; // stack
     
     unsigned k = root;
     reg x = _mm256_set1_epi32(_x);
 
     for (int h = 0; h < H - 1; h++) {
         unsigned i = rank32(x, &tree[k]);
-        s[h] = k + i;
+
+        tree[k + i] = (_x > tree[k + i] ? _x : tree[k + i]);
+        sk[h] = k, si[h] = i;
+        
         k = tree[k + B + i];
     }
 
     unsigned i = rank32(x, &tree[k]);
 
     bool filled  = (tree[k + B - 2] != INT_MAX);
-    bool updated = (tree[k + i]     == INT_MAX);
 
     insert(tree + k, i, _x);
-
-    if (updated)
-        for (int h = H - 2; h >= 0; h--)
-            tree[s[h]] = (_x > tree[s[h]] ? _x : tree[s[h]]);
 
     if (filled) {
         // create a new leaf node
@@ -115,7 +113,7 @@ void insert(int _x) {
         n_tree += B;
 
         for (int h = H - 2; h >= 0; h--) {
-            k = s[h] & ~(B - 1), i = s[h] & (B - 1);
+            k = sk[h], i = si[h];
 
             filled = (tree[k + B - 3] != INT_MAX);
 
