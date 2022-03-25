@@ -149,7 +149,7 @@ void insert(int _x) {
 
     if (updated) {
         for (int h = H - 2; h >= 0; h--) {
-            int idx = sk[h] + si[h];
+            int idx = sk[h] + si[h]; // todo: unified store
             tree[idx] = (tree[idx] < _x ? _x : tree[idx]);
         }
     }
