@@ -28,9 +28,6 @@ unsigned rank32(reg x, int *node) {
 
     m1 = _mm256_blend_epi16(m1, m2, 0b01010101);
     m3 = _mm256_blend_epi16(m3, m4, 0b01010101);
-    
-    //const reg blend = _mm256_set1_epi16(255);
-    //m1 = _mm256_blendv_epi8(m1, m3, blend);
     m1 = _mm256_packs_epi16(m1, m3);
 
     unsigned mask = _mm256_movemask_epi8(m1);
@@ -135,15 +132,13 @@ void insert(int _x) {
             n_tree += 2 * B;
         }
 
-        if (filled) {
-            tree[n_tree] = v;
+        tree[n_tree] = v;
 
-            tree[n_tree + B] = root;
-            tree[n_tree + B + 1] = p;
+        tree[n_tree + B] = root;
+        tree[n_tree + B + 1] = p;
 
-            root = n_tree;
-            n_tree += 2 * B;
-            H++;
-        }
+        root = n_tree;
+        n_tree += 2 * B;
+        H++;
     }
 }
