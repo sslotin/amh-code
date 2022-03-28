@@ -8,11 +8,11 @@ int read(int n) {
 
     int s = 0, x = 0;
 
-    while (n) {
+    while (true) {
         fread(buf, 1, SIZE, stdin);
         int k = 0;
 
-        while (k < SIZE && n) {
+        while (k < SIZE) {
             char c = buf[k++];
             if (c >= '0' && c <= '9') // c != '\n' may be one cycle shorter
                 x = 10 * x + (c - '0');
@@ -20,9 +20,11 @@ int read(int n) {
                 s ^= x;
                 x = 0;
                 n--;
+                if (n == 0)
+                    return s;
             }
         }
     }
 
-    return s;
+    return s; // never reached
 }
