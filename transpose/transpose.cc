@@ -11,12 +11,12 @@ int main() {
         a[i] = i;
 
     reg r1 = _mm256_load_si256((reg*) &a[0]);
-    reg r2 = _mm256_load_si256((reg*) &a[32]);
+    reg r5 = _mm256_load_si256((reg*) &a[32]);
     reg r3 = _mm256_load_si256((reg*) &a[64]);
-    reg r4 = _mm256_load_si256((reg*) &a[96]);
-    reg r5 = _mm256_load_si256((reg*) &a[128]);
+    reg r7 = _mm256_load_si256((reg*) &a[96]);
+    reg r2 = _mm256_load_si256((reg*) &a[128]);
     reg r6 = _mm256_load_si256((reg*) &a[160]);
-    reg r7 = _mm256_load_si256((reg*) &a[192]);
+    reg r4 = _mm256_load_si256((reg*) &a[192]);
     reg r8 = _mm256_load_si256((reg*) &a[224]);
 
     reg d1 = _mm256_unpacklo_epi8(r1, r2);
@@ -38,21 +38,21 @@ int main() {
     reg q8 = _mm256_unpackhi_epi8(d6, d8);
 
     r1 = _mm256_unpacklo_epi8(q1, q5);
-    r2 = _mm256_unpacklo_epi8(q2, q6);
-    r3 = _mm256_unpacklo_epi8(q3, q7);
-    r4 = _mm256_unpacklo_epi8(q4, q8);
-    r5 = _mm256_unpackhi_epi8(q1, q5);
-    r6 = _mm256_unpackhi_epi8(q2, q6);
-    r7 = _mm256_unpackhi_epi8(q3, q7);
+    r2 = _mm256_unpackhi_epi8(q1, q5);
+    r3 = _mm256_unpacklo_epi8(q2, q6);
+    r4 = _mm256_unpackhi_epi8(q2, q6);
+    r5 = _mm256_unpacklo_epi8(q3, q7);
+    r6 = _mm256_unpackhi_epi8(q3, q7);
+    r7 = _mm256_unpacklo_epi8(q4, q8);
     r8 = _mm256_unpackhi_epi8(q4, q8);
     
     _mm256_store_si256((reg*) &a[0], r1);
-    _mm256_store_si256((reg*) &a[32], r5);
-    _mm256_store_si256((reg*) &a[64], r2);
-    _mm256_store_si256((reg*) &a[96], r6);
-    _mm256_store_si256((reg*) &a[128], r3);
-    _mm256_store_si256((reg*) &a[160], r7);
-    _mm256_store_si256((reg*) &a[192], r4);
+    _mm256_store_si256((reg*) &a[32], r2);
+    _mm256_store_si256((reg*) &a[64], r3);
+    _mm256_store_si256((reg*) &a[96], r4);
+    _mm256_store_si256((reg*) &a[128], r5);
+    _mm256_store_si256((reg*) &a[160], r6);
+    _mm256_store_si256((reg*) &a[192], r7);
     _mm256_store_si256((reg*) &a[224], r8);
     
     const int W = 8;
