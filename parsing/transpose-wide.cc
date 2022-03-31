@@ -3,7 +3,7 @@
 void prepare() {}
 
 const int SIZE = (1<<16); // 16K
-const int K = 4; 
+const int K = 4;
 const int P = SIZE / K / 8;   // partition size
 
 typedef __m256i reg;
