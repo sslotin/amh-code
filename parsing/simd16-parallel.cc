@@ -67,7 +67,6 @@ int simd_parse(int &_s) {
     for (int i = 0; i < K; i++) {
         s[i] = _mm_setzero_si128();
         p[i] = i * (SIZE / K);
-        // p[i] = TODO
     }
 
     p[0] = buf_pos;
@@ -84,15 +83,11 @@ int simd_parse(int &_s) {
             int d = __builtin_ffs(m); // relative position of first separator (1-indexed)
 
             p[i] += d;
-            //printf("%d\n", d);
 
             // convert ASCII chars to 2x8 numbers 0..9, one byte each
             x = _mm_subs_epu8(x, zero);
 
-            //cout << d << " " << (9 - d) << endl;
-            //x = _mm_bslli_si128(x, )
             x = _mm_slli_epi64(x, 8 * (9 - d)); // shift right by (9 - d) bytes
-            //print(x);
             x = convert(x);
 
             s[i] = _mm_xor_si128(s[i], x);
@@ -114,7 +109,6 @@ int read(int n) {
         buf_pos = 0;
         if (buf_len == SIZE) {
             int bytes_parsed = simd_parse(s); // scalar_parse
-            //printf("%d %d %d\n", s, bytes_parsed, buf_len);
             buf_pos = SIZE - bytes_parsed;
             memcpy(buf, buf + bytes_parsed, buf_pos);
         } else {
