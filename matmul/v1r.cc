@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-void matmul(const float *a, const float *_b, float *c, int n) {
+void matmul(const float *a, const float *_b, float * __restrict__ c, int n) {
     float *b = new float[n * n];
 
     for (int i = 0; i < n; i++)

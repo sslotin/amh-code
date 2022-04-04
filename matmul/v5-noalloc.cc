@@ -18,11 +18,11 @@ float* alloc(int n) {
 // c[x:x+6][y:y+16] += a[x:x+6][l:r] * b[l:r][y:y+16]
 
 void kernel(float *a, vector *b, vector *c, int x, int y, int l, int r, int n) {
-    vector t[6][2] = { _mm256_setzero_ps() };
+    vector t[6][2]{};
 
     for (int k = l; k < r; k++) {
         for (int i = 0; i < 6; i++) {
-            vector alpha = _mm256_set1_ps(a[(x + i) * n + k]);
+            vector alpha = vector{} + a[(x + i) * n + k];
             for (int j = 0; j < 2; j++)
                 t[i][j] += alpha * b[(k * n + y) / 8 + j];
         }
@@ -32,6 +32,19 @@ void kernel(float *a, vector *b, vector *c, int x, int y, int l, int r, int n) {
         for (int j = 0; j < 2; j++)
             c[((x + i) * n + y) / 8 + j] += t[i][j];
 }
+
+/*
+void kernel(float * __restrict__ a, vector * __restrict__ b, vector * __restrict__ c,
+            int x, int y, int l, int r, int n) {
+    for (int k = l; k < r; k++) {
+        for (int i = 0; i < 6; i++) {
+            vector alpha = vector{} + a[(x + i) * n + k];
+            for (int j = 0; j < 2; j++)
+                c[((x + i) * n + y) / 8 + j] += alpha * b[(k * n + y) / 8 + j];
+        }
+    }
+}
+*/
 
 /*
 template<typename T>
@@ -99,17 +112,18 @@ void kernel(float *a, vector *b, vector *c, int x, int y, int l, int r, int n) {
 }
 */
 
+/*
 const int L1 = (1<<15) / 4; // L1 cache is 32K
 const int L2 = (1<<19) / 4; // L2 cache is 512K
 const int L3 = (1<<23) / 4; // L3 cache is 8M
+*/
 
 void matmul(const float *_a, const float *_b, float *_c, int n) {
     int nx = (n + 5) / 6 * 6;
     int ny = (n + 15) / 16 * 16;
     
-    float *a = alloc(nx * ny);
-    float *b = alloc(nx * ny);
-    float *c = alloc(nx * ny);
+    const int MAXN = 1920 * 1920; // ~15MB each
+    alignas(64) static float a[MAXN], b[MAXN], c[MAXN];
 
     for (int i = 0; i < n; i++) {
         memcpy(&a[i * ny], &_a[i * n], 4 * n);
@@ -168,8 +182,4 @@ void matmul(const float *_a, const float *_b, float *_c, int n) {
 
     for (int i = 0; i < n; i++)
         memcpy(&_c[i * n], &c[i * ny], 4 * n);
-    
-    std::free(a);
-    std::free(b);
-    std::free(c);
 }

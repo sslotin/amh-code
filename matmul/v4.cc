@@ -60,7 +60,7 @@ void matmul(const float *_a, const float *_b, float *_c, int n) {
     for (int i = 0; i < n; i++)
         memcpy(&_c[i * n], &c[i * ny], 4 * n);
     
-    delete[] a;
-    delete[] b;
-    delete[] c;
+    std::free(a);
+    std::free(b);
+    std::free(c);
 }

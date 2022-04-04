@@ -18,20 +18,88 @@ float* alloc(int n) {
 // c[x:x+6][y:y+16] += a[x:x+6][l:r] * b[l:r][y:y+16]
 
 void kernel(float *a, vector *b, vector *c, int x, int y, int l, int r, int n) {
-    vector t[6][2] = { _mm256_setzero_ps() };
+    vector t00, t01,
+           t10, t11,
+           t20, t21,
+           t30, t31,
+           t40, t41,
+           t50, t51;
+
+    t00 = c[((x + 0) * n + y) / 8 + 0];
+    t01 = c[((x + 0) * n + y) / 8 + 1];
+
+    t10 = c[((x + 1) * n + y) / 8 + 0];
+    t11 = c[((x + 1) * n + y) / 8 + 1];
+
+    t20 = c[((x + 2) * n + y) / 8 + 0];
+    t21 = c[((x + 2) * n + y) / 8 + 1];
+
+    t30 = c[((x + 3) * n + y) / 8 + 0];
+    t31 = c[((x + 3) * n + y) / 8 + 1];
+
+    t40 = c[((x + 4) * n + y) / 8 + 0];
+    t41 = c[((x + 4) * n + y) / 8 + 1];
+
+    t50 = c[((x + 5) * n + y) / 8 + 0];
+    t51 = c[((x + 5) * n + y) / 8 + 1];
 
     for (int k = l; k < r; k++) {
-        for (int i = 0; i < 6; i++) {
-            vector alpha = _mm256_set1_ps(a[(x + i) * n + k]);
-            for (int j = 0; j < 2; j++)
-                t[i][j] += alpha * b[(k * n + y) / 8 + j];
-        }
+        vector a0 = vector{} + a[(x + 0) * n + k];
+        t00 += a0 * b[(k * n + y) / 8];
+        t01 += a0 * b[(k * n + y) / 8 + 1];
+
+        vector a1 = vector{} + a[(x + 1) * n + k];
+        t10 += a1 * b[(k * n + y) / 8];
+        t11 += a1 * b[(k * n + y) / 8 + 1];
+
+        vector a2 = vector{} + a[(x + 2) * n + k];
+        t20 += a2 * b[(k * n + y) / 8];
+        t21 += a2 * b[(k * n + y) / 8 + 1];
+
+        vector a3 = vector{} + a[(x + 3) * n + k];
+        t30 += a3 * b[(k * n + y) / 8];
+        t31 += a3 * b[(k * n + y) / 8 + 1];
+
+        vector a4 = vector{} + a[(x + 4) * n + k];
+        t40 += a4 * b[(k * n + y) / 8];
+        t41 += a4 * b[(k * n + y) / 8 + 1];
+
+        vector a5 = vector{} + a[(x + 5) * n + k];
+        t50 += a5 * b[(k * n + y) / 8];
+        t51 += a5 * b[(k * n + y) / 8 + 1];
     }
 
-    for (int i = 0; i < 6; i++)
-        for (int j = 0; j < 2; j++)
-            c[((x + i) * n + y) / 8 + j] += t[i][j];
+    c[((x + 0) * n + y) / 8 + 0] = t00;
+    c[((x + 0) * n + y) / 8 + 1] = t01;
+
+    c[((x + 1) * n + y) / 8 + 0] = t10;
+    c[((x + 1) * n + y) / 8 + 1] = t11;
+
+    c[((x + 2) * n + y) / 8 + 0] = t20;
+    c[((x + 2) * n + y) / 8 + 1] = t21;
+
+    c[((x + 3) * n + y) / 8 + 0] = t30;
+    c[((x + 3) * n + y) / 8 + 1] = t31;
+
+    c[((x + 4) * n + y) / 8 + 0] = t40;
+    c[((x + 4) * n + y) / 8 + 1] = t41;
+
+    c[((x + 5) * n + y) / 8 + 0] = t50;
+    c[((x + 5) * n + y) / 8 + 1] = t51;
 }
+
+/*
+void kernel(float * __restrict__ a, vector * __restrict__ b, vector * __restrict__ c,
+            int x, int y, int l, int r, int n) {
+    for (int k = l; k < r; k++) {
+        for (int i = 0; i < 6; i++) {
+            vector alpha = vector{} + a[(x + i) * n + k];
+            for (int j = 0; j < 2; j++)
+                c[((x + i) * n + y) / 8 + j] += alpha * b[(k * n + y) / 8 + j];
+        }
+    }
+}
+*/
 
 /*
 template<typename T>
@@ -99,22 +167,23 @@ void kernel(float *a, vector *b, vector *c, int x, int y, int l, int r, int n) {
 }
 */
 
+/*
 const int L1 = (1<<15) / 4; // L1 cache is 32K
 const int L2 = (1<<19) / 4; // L2 cache is 512K
 const int L3 = (1<<23) / 4; // L3 cache is 8M
+*/
 
 void matmul(const float *_a, const float *_b, float *_c, int n) {
     int nx = (n + 5) / 6 * 6;
     int ny = (n + 15) / 16 * 16;
     
-    float *a = alloc(nx * ny);
-    float *b = alloc(nx * ny);
-    float *c = alloc(nx * ny);
+    const int MAXN = 1920 * 1920; // ~15MB each
+    alignas(64) static float a[MAXN], b[MAXN], c[MAXN];
 
-    for (int i = 0; i < n; i++) {
+    /*for (int i = 0; i < n; i++) {
         memcpy(&a[i * ny], &_a[i * n], 4 * n);
         memcpy(&b[i * ny], &_b[i * n], 4 * n);
-    }
+    }*/
 
     // c[x:x+6][y:y+16] += a[x:x+6][l:r] * b[l:r][y:y+16]
 
@@ -145,9 +214,16 @@ void matmul(const float *_a, const float *_b, float *_c, int n) {
     //const int s2 = L2 / ny / 6 * 6;
     //const int s3 = 16;
 
+    /*
     const int s3 = 64;
     const int s2 = 120;
     const int s1 = 240;
+    */
+
+    const int u = 96;
+    const int s3 = u;
+    const int s2 = 2 * u;
+    const int s1 = 4 * u;
 
     //const int t = L1/s3;
 
@@ -162,14 +238,10 @@ void matmul(const float *_a, const float *_b, float *_c, int n) {
                 // now we are working with b[i1:i1+s1][i3:i3+s3]
                 // this equates to updating c[i2:i2+s2][i3:i3+s3]
                 // with [l:r] = [i1:i1+s1]
-                for (int x = i2; x < std::min(i2 + s2, nx); x += 6)
-                    for (int y = i3; y < std::min(i3 + s3, ny); y += 16)
-                        kernel(a, (vector*) b, (vector*) c, x, y, i1, std::min(i1 + s1, n), ny);
+                for (int x = i2; x < i2 + s2; x += 6)
+                    for (int y = i3; y < i3 + s3; y += 16)
+                        kernel(a, (vector*) b, (vector*) c, x, y, i1, i1 + s1, ny);
 
-    for (int i = 0; i < n; i++)
-        memcpy(&_c[i * n], &c[i * ny], 4 * n);
-    
-    std::free(a);
-    std::free(b);
-    std::free(c);
+    //for (int i = 0; i < n; i++)
+    //    memcpy(&_c[i * n], &c[i * ny], 4 * n);
 }
