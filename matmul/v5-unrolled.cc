@@ -214,16 +214,16 @@ void matmul(const float *_a, const float *_b, float *_c, int n) {
     //const int s2 = L2 / ny / 6 * 6;
     //const int s3 = 16;
 
-    /*
     const int s3 = 64;
     const int s2 = 120;
     const int s1 = 240;
-    */
-
+    
+    /*
     const int u = 96;
     const int s3 = u;
     const int s2 = 2 * u;
     const int s1 = 4 * u;
+    */
 
     //const int t = L1/s3;
 
