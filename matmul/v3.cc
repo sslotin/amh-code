@@ -40,4 +40,7 @@ void matmul(const float *_a, const float *_b, float *c, int n) {
             c[i * n + j] = hsum(s);
         }
     }
+
+    std::free(a);
+    std::free(b);
 }
