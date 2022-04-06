@@ -9,8 +9,7 @@ const int u = 48; // all block coordinates must be a multiple of lcm(6, 16) = 48
 const int n = 40 * u; // = 1920 (also try 240, 480, 960)
 alignas(64) float a[n * n], b[n * n], c[n * n];
 
-const int B = 8;
-typedef float vec __attribute__ (( vector_size(4 * B) ));
+typedef float vec __attribute__ (( vector_size(32) ));
 
 // 6x16 micro-kernel
 void kernel(int x, int y, int l, int r) {
@@ -75,4 +74,3 @@ int main() {
 
     return 0;
 }
-
