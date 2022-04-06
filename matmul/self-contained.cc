@@ -1,36 +1,12 @@
-#pragma GCC optimize("Ofast")
+#pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,fma")
 
 #include <bits/stdc++.h>
 #include <x86intrin.h>
 
-/*
-typedef float vec __attribute__ (( vector_size(32) ));
-
-int *a;
-vec *b, *c;
-
-const int u = 48;
-const int s3 = 2 * u;
-const int s2 = 4 * u;
-const int s1 = 8 * u;
-
-for (int i3 = 0; i3 < n; i3 += s3)
-    for (int i2 = 0; i2 < n; i2 += s2)
-        for (int i1 = 0; i1 < n; i1 += s1)
-            for (int x = i2; x < i2 + s2; x += 6)
-                for (int y = i3; y < i3 + s3; y += 16)
-                    for (int k = i1; k < i1 + s1; k++)
-                        for (int i = 0; i < 6; i++)
-                            for (int j = 0; j < 2; j++)
-                                c[x * n / 8 + i * n / 8 + y / 8 + j] += (vec{} + a[x * n + i * n + k]) * b[n / 8 * k + y / 8 + j];
-                                c[x + i][y + j] += (vec{} + a[x + i][k]) * b[k][y + j];
-*/
-
-
 const int u = 48; // all block coordinates must be a multiple of lcm(6, 16) = 48
 
-const int n = 20 * u; // = 1920 (also try 240, 480, 960)
+const int n = 40 * u; // = 1920 (also try 240, 480, 960)
 alignas(64) float a[n * n], b[n * n], c[n * n];
 
 const int B = 8;
@@ -38,7 +14,7 @@ typedef float vec __attribute__ (( vector_size(4 * B) ));
 
 // 6x16 micro-kernel
 void kernel(int x, int y, int l, int r) {
-    vec t[6][2] = {0};
+    vec t[6][2]{0};
 
     for (int k = l; k < r; k++)
         for (int i = 0; i < 6; i++)
