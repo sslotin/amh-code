@@ -15,9 +15,8 @@ int gcd(int a, int b, int &x, int &y) {
 
 int inverse(int a) {
     int x, y;
-    gcd(a, m, x, y);
+    gcd(a, M, x, y);
     if (x < 0)
-        x += m;
-    //cout << a << " " << x << " " << y << " " << x * a % m << endl;
+        x += M;
     return x;
 }
