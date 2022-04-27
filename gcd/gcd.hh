@@ -10,6 +10,8 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < n; i++) {
         a[i] = rand() % 1000000000;
         b[i] = rand() % 1000000000;
+        //a[i] = 564400443;
+        //b[i] = 1e9 + 7;
     }
 
     volatile int checksum = 0;
