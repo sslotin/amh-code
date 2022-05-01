@@ -8,7 +8,7 @@ i64 binpow(i64 a, i64 n) {
     if (n % 2 == 1)
         return 1ll * binpow(a, n - 1) * a % M;
     else {
-        i64 b = binpow(a, n / 2) % M;
+        i64 b = binpow(a, n / 2);
         return b * b % M;
     }
 }
