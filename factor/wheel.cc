@@ -40,11 +40,10 @@ u64 find_factor(u64 n) {
     return 1;
 }*/
 
-/*
 const int primes[] = {2, 3, 5, 7, 11, 13};
 
 struct Wheel {
-    int skiplist[];
+    int skiplist[1000];
     vector<int> skiplist; // {1, 17, ...}
     int product = 1;
 
@@ -75,4 +74,3 @@ u64 find_factor(u64 n) {
                     return base + offset;
     return 1;
 }
-*/
