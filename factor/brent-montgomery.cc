@@ -1,5 +1,25 @@
 #include "factor.hh"
 
+u64 gcd(long long a, long long b) {
+    if (a == 0) return b;
+    if (b == 0) return a;
+
+    long long az = __builtin_ctz(a);
+    long long bz = __builtin_ctz(b);
+    long long shift = az < bz ? az : bz;
+    b >>= bz;
+    
+    while (a != 0) {
+        a >>= az;
+        long long diff = b - a;
+        az = __builtin_ctz(diff);
+        b = a < b ? a : b;
+        a = a < b ? diff : -diff;
+    }
+    
+    return b << shift;
+}
+
 u64 diff(u64 x, u64 y) {
     return (x > y ? x - y : y - x);
 }
@@ -19,78 +39,43 @@ struct montgomery {
         return (x >> 64) + n - m;
     }
 
-    /*
-    u64 reduce(u128 x) {
-        u64 q = u64(x) * nr;
-        u64 m = ((u128) q * n) >> 64;
-        u64 xhi = (x >> 64);
-        //cout << u64(x>>64) << " " << u64(x) << " " << q << endl;
-        //cout << u64(m>>64) << " " << u64(m) << endl;
-        //exit(0);
-        if (xhi >= m)
-            return (xhi - m);
-        else
-            return (xhi - m) + n;
-    }
-    */
-
-    u64 mult(u64 x, u64 y) {
+    u64 multiply(u64 x, u64 y) {
         return reduce((u128) x * y);
     }
 
     u64 transform(u64 x) {
         return (u128(x) << 64) % n;
     }
-};
 
-u64 mod(u64 x, u64 n) {
-    return x >= n ? x - n : x;
-}
+    u64 mod(u64 x) {
+        return x >= n ? x - n : x;
+    }
+};
 
 u64 f(u64 x, u64 a, montgomery m) {
     // ??? nothing will break if result is 1 more, so no need for modulo
-    u64 t = m.mult(x, x) + a;
-    return t >= m.n ? t - m.n : t;
+    return m.multiply(x, x) + a;
 }
 
-const int M = 256;
+const int M = 1024;
 
 u64 rho(u64 n, u64 x0 = 2, u64 a = 1) {
-    montgomery space(n);
-    u64 x, y = space.transform(x0);
-    a = space.transform(a);
-    //cout << space.n << endl;
-    for (int l = 1; true; l *= 2) {
-        x = y;
-        u64 m = 1;
-        for (int i = 1; i <= l; i++) {
-            //cout << y << endl;
-            //cout << (y < n) << endl;
-            y = f(y, a, space);
-            //cout << y << endl;
-            m = mod(space.mult(diff(x, y), m), n);
-            //cout << m << endl;
-            if (i % M == 0 || i == l) {
-                if (m == 0) {
-                    y = x;
-                    while (true) {
-                        y = f(y, a, space);
-                        if (y == 0)
-                            break;
-                        u64 g = gcd(diff(x, y), n);
-                        //cout << "! " << g << " " << x << " " << y << endl;
-                        //cout << "# " << g << " " << space.reduce(x) << " " << space.reduce(y) << endl;
-                        if (g != 1)
-                            return g;
-                    }
-                } else {
-                    u64 g = gcd(m, n);
-                    if (g != 1)
-                        return g;
-                }
+    montgomery m(n);
+    u64 y = x0;
+    
+    for (int l = M; l < (1 << 20); l *= 2) {
+        u64 x = y, p = 1;
+        for (int i = 0; i < l; i += M) {
+            for (int j = 0; j < M; j++) {
+                y = f(y, a, m);
+                p = m.multiply(p, diff(x, y));
             }
+            if (u64 g = gcd(p, n); g != 1)
+                return g;
         }
     }
+
+    return 1;
 }
 
 u64 find_factor(u64 n) {
