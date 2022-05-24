@@ -13,6 +13,13 @@ struct montgomery {
             nr *= 2 - n * nr;
     }
 
+    u64 reduce(u128 x) const {
+        u64 q = u64(x) * nr;
+        u64 m = ((u128) q * n) >> 64;
+        return (x >> 64) + n - m;
+    }
+
+    /*
     u64 reduce(u128 x) {
         u64 q = u64(x) * nr;
         u64 m = ((u128) q * n) >> 64;
@@ -25,6 +32,7 @@ struct montgomery {
         else
             return (xhi - m) + n;
     }
+    */
 
     u64 mult(u64 x, u64 y) {
         return reduce((u128) x * y);
@@ -35,7 +43,11 @@ struct montgomery {
     }
 };
 
-inline u64 f(u64 x, u64 a, montgomery m) {
+u64 mod(u64 x, u64 n) {
+    return x >= n ? x - n : x;
+}
+
+u64 f(u64 x, u64 a, montgomery m) {
     // ??? nothing will break if result is 1 more, so no need for modulo
     u64 t = m.mult(x, x) + a;
     return t >= m.n ? t - m.n : t;
@@ -56,7 +68,7 @@ u64 rho(u64 n, u64 x0 = 2, u64 a = 1) {
             //cout << (y < n) << endl;
             y = f(y, a, space);
             //cout << y << endl;
-            m = space.mult(diff(x, y), m);
+            m = mod(space.mult(diff(x, y), m), n);
             //cout << m << endl;
             if (i % M == 0 || i == l) {
                 if (m == 0) {
