@@ -2,7 +2,7 @@
 
 template<int N = (1<<16)>
 struct Precalc {
-    char divisor[N];
+    unsigned char divisor[N];
 
     constexpr Precalc() : divisor{} {
         for (int i = 0; i < N; i++)
