@@ -43,6 +43,18 @@ int lower_bound(int x) {
 
 /*
 int lower_bound(int x) {
+    int *base = t, len = n - 1;
+    while (len != 0) {
+        bool odd = len & 1;
+        len /= 2;
+        base += (base[len] < x) * (len + odd);
+    }
+    return *base;
+}
+*/
+
+/*
+int lower_bound(int x) {
     int *base = t, len = n;
     while (len > 1) {
         //int half = len / 2;
