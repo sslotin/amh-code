@@ -22,13 +22,28 @@ int lower_bound(int x) {
 }
 */
 
+/*
 int lower_bound(int x) {
     int *base = t, len = n;
     while (len > 1) {
         __builtin_prefetch(&base[len / 4]);
         __builtin_prefetch(&base[3 * len / 4]);
-        base += (base[(len - 1) / 2] < x) * (len / 2);
-        len = (len + 1) / 2;
+        int half = len / 2;
+        base += (base[half - 1] < x) * half;
+        len -= half;
+    }
+    return *base;
+}
+*/
+
+int lower_bound(int x) {
+    int *base = t, len = n;
+    while (len > 1) {
+        int half = len / 2;
+        len -= half;
+        __builtin_prefetch(&base[len / 2 - 1]);
+        __builtin_prefetch(&base[half + len / 2 - 1]);
+        base += (base[half - 1] < x) * half;
     }
     return *base;
 }
