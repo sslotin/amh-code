@@ -1,21 +1,19 @@
 #include <bits/stdc++.h>
 #include <x86intrin.h>
 
-int random_numbers[(1<<23)];
-
+void prepare(int n);
 void permute(char *a, int n);
 
 int main(int argc, char* argv[]) {
     int n = (argc > 1 ? atoi(argv[1]) : 1024);
     int k = (argc > 2 ? atol(argv[2]) : (1 << 30)) / n;
 
-    for (int i = 0; i < n; i++)
-        random_numbers[i] = rand() % (i + 1);
+    prepare(n);
 
     char* a = (char*) std::aligned_alloc(64, n);
 
     for (int i = 0; i < n; i++)
-        a[i] = rand();
+        a[i] = rand() % 100;
     
     permute(a, n);
 
