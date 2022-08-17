@@ -1,11 +1,16 @@
 #include <bits/stdc++.h>
 #include <x86intrin.h>
 
+int random_numbers[(1<<23)];
+
 void permute(char *a, int n);
 
 int main(int argc, char* argv[]) {
     int n = (argc > 1 ? atoi(argv[1]) : 1024);
     int k = (argc > 2 ? atol(argv[2]) : (1 << 30)) / n;
+
+    for (int i = 0; i < n; i++)
+        random_numbers[i] = rand() % (i + 1);
 
     char* a = (char*) std::aligned_alloc(64, n);
 
@@ -29,7 +34,8 @@ int main(int argc, char* argv[]) {
 
     float duration = float(clock() - start) / CLOCKS_PER_SEC;
     printf("%.4f seconds\n", duration);
-    printf("%.4f GFLOPS\n", 1e-9 * n * k / duration);
+    printf("%.4f B/s\n", 1e-9 * n * k / duration);
+    printf("%.4f c/B\n", duration * 2e9 / n / k);
 
     return 0;
 }
