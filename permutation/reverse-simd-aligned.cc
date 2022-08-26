@@ -5,6 +5,8 @@ typedef __m256i reg;
 // _mm256_shuffle_epi8
 // _mm256_permute2x128_si256
 
+void prepare(int n) {}
+
 const reg reverseMask = _mm256_setr_epi8(
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
