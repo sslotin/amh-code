@@ -2,7 +2,7 @@
 #include <x86intrin.h>
 using namespace std;
 
-const int N = (1<<12);
+const int N = (1<<12) + 13;
 const int B = 2; // number of accumulators
 alignas(32) int a[N+B];
 
@@ -23,6 +23,56 @@ int stl_reduce() {
 
 typedef __m256i reg;
 
+int intrinsics_sum() {
+    reg res = _mm256_setzero_si256();
+
+    for (int i = 0; i + 7 < N; i += 8) {
+        reg x = _mm256_load_si256((reg*) &a[i]);
+        res = _mm256_add_epi32(res, x);
+    }
+
+    int s = 0;
+    
+    int t[8];
+    _mm256_storeu_si256((reg*) t, res);
+
+    for (int i = 0; i < 8; i++)
+        s += t[i];
+
+    for (int i = N / 8 * 8; i < N; i++)
+        s += a[i];
+
+    return s;
+}
+
+
+int intrinsics_ilp_sum() {
+    reg b[B] = { _mm256_setzero_si256() };
+
+    for (int i = 0; i + (8 * B - 1) < N; i += 8 * B) {
+        for (int j = 0; j < B; j++) {
+            reg x = _mm256_load_si256((reg*) &a[i + 8 * j]);
+            b[j] = _mm256_add_epi32(b[j], x);
+        }
+    }
+
+    for (int i = 1; i < B; i++)
+        b[0] = _mm256_add_epi32(b[0], b[i]);
+    
+    int s = 0;
+
+    int t[8];
+    _mm256_storeu_si256((reg*) t, b[0]);
+
+    for (int i = 0; i < 8; i++)
+        s += t[i];
+
+    for (int i = N / (8 * B) * (8 * B); i < N; i++)
+        s += a[i];
+
+    return s;
+}
+
 int ilp_autovec_sum() {
     int b[B] = {0};
 
@@ -38,35 +88,13 @@ int ilp_autovec_sum() {
     return s;
 }
 
-/*
-int ilp_sum() {
-    reg b[B] = { _mm256_setzero_si256() };
-
-    for (int i = 0; i < N; i += 8 * B) {
-        for (int j = 0; j < B; j++) {
-            reg x = _mm256_load_si256((reg*) &a[i + 8 * j]);
-            b[j] = _mm256_add_epi32(b[j], x);
-        }
-    }
-
-    for (int i = 1; i < B; i++)
-        b[0] = _mm256_add_epi32(b[0], b[i]);
-    
-    int s = 0;
-
-    for (int i = 0; i < 8; i++)
-        s += _mm256_extract_epi32(b[0], i);
-
-    return s;
-}*/
-
 typedef int vec __attribute__ (( vector_size(32) ));
 
 int ilp_sum_v2() {
     vec b[B] = {0};
     vec* v = (vec*) a;
 
-    for (int i = 0; i < N/8; i += B)
+    for (int i = 0; i + (B - 1) < N / 8; i += B)
         for (int j = 0; j < B; j++)
             b[j] += v[i + j];
     
@@ -77,6 +105,9 @@ int ilp_sum_v2() {
 
     for (int i = 0; i < 8; i++)
         s += b[0][i];
+
+    for (int i = N / (8 * B) * (8 * B); i < N; i++)
+        s += a[i];
 
     return s;
 }
@@ -125,8 +156,11 @@ int main() {
     for (int i = 0; i < N; i++)
         a[i] = rand() % 100;
 
-    timeit(ilp_sum_v2);
     timeit(normal_sum);
+    timeit(normal_sum);
+    timeit(ilp_sum_v2);
+    timeit(intrinsics_sum);
+    timeit(intrinsics_ilp_sum);
     //timeit(normal_sum);
     //timeit(stl_sum);
     //timeit(ilp_autovec_sum);
@@ -134,7 +168,6 @@ int main() {
     //timeit(stl_reduce);
     //timeit(ilp_sum);
     //timeit(ilp_sum_v2);
-    timeit(ilp_sum_v2);
     //timeit(ilp_sum_v3);
     //timeit(dummy);
 
