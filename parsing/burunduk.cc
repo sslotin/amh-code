@@ -1,7 +1,5 @@
 #include "read.hh"
 
-void prepare() {}
-
 static const int buf_size = (1<<12);
 static unsigned char buf[buf_size];
 static int buf_len = 0, buf_pos = 0;

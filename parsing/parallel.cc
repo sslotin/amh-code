@@ -1,7 +1,5 @@
 #include "read.hh"
 
-void prepare() {}
-
 int read(int n) {
     const int SIZE = (1<<14); // 16K
     char buf[SIZE];
