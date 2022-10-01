@@ -63,15 +63,6 @@ void transpose(char *a, reg *b, int P) {
  ...
 */
 
-void print(reg x) {
-    int buf[8];
-    _mm256_storeu_si256((reg*) buf, x);
-    for (int i = 0; i < 8; i++)
-        printf("%d ", buf[i]);
-    printf("\n");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
-
 // 256-byte buffer
 void update(char *buffer, reg &x, reg &s) {
     for (int j = 0; j < 2; j++) {
@@ -93,10 +84,6 @@ void update(char *buffer, reg &x, reg &s) {
                 s = _mm256_xor_si256(s, _mm256_and_si256(x, mask));
 
                 x = _mm256_blendv_epi8(y, zero_int, mask);
-                //print(c);
-                //print(x);
-                //print(s);
-                //std::cout << std::endl;
             }
         }
     }
@@ -132,12 +119,11 @@ int read(int n) {
     // partition size should be divisible by 32
     // also there are probably some minimum restrictions
     int P = fsize / 256 * 32;
-    alignas(32) char buffer[8 * 32];
 
-    reg s = _mm256_setzero_si256();
-    reg x = _mm256_setzero_si256();
+    reg s = {}, x = {};
 
     for (int i = 0; i < P; i += 32) {
+        alignas(32) char buffer[8 * 32];
         transpose(input + i, (reg*) buffer, P);
         update(buffer, x, s);
     }
@@ -149,11 +135,9 @@ int read(int n) {
         char *k = input + i * P - 1; // last char of the previous partition
         if (*k != '\n') {
             r ^= parse_int(k + 1);
-            //std::cout << i << " " << parse_int(k + 1) << std::endl;
             while (*k != '\n')
                 k--;           
             r ^= parse_int(k + 1);
-            //std::cout << i << " " << parse_int(k + 1) << std::endl;
         }
     }
 
@@ -167,7 +151,6 @@ int read(int n) {
         if (c != '\n')
             y = 10 * y + (c - '0');
         else {
-            //std::cout << y << std::endl;
             r ^= y;
             y = 0;
         }
